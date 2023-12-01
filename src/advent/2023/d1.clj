@@ -7,31 +7,17 @@ pqr3stu8vwx
 a1b2c3d4e5f
 treb7uchet")
 
-(defn calibration-value [s]
-  (let [digits (string/replace s #"[^0-9]" "")]
-    (Integer/parseInt (str (first digits) (last digits)))))
-
-(defn total [sample-input]
-  (apply + (map calibration-value (string/split-lines sample-input))))
-
-;; Answer 1
-
-(total day-1-input)
-
-;; Answer 1 (alternative)
-(defn digit? [char] ;; den brika digit? stin clojure.core
-  (let [n (int char)]
-    (and (>= n 48) (<= n 57))))
+(defn digit? [char]
+  (number? (read-string (str char))))
 
 (defn total-alt [sample-input]
   (apply +
-         (map (fn [l] (Integer/parseInt
-                       (apply str [(first l) (last l)])))
+         (map (fn [l] (+ (* 10 (first l)) (last l)))
               (for [line (string/split-lines sample-input)]
-                (for [char line
-                      :when (digit? char)]
-                  char)))))
+                (for [char line :when (digit? char)]
+                  (read-string (str char)))))))
 
+;; Answer 1 
 (total-alt day-1-input)
 
 ;;  Part 2
@@ -50,38 +36,24 @@ zoneight234
         (into []
               (map-indexed
                vector
-               ["zero" "one" "two" "three" "four" "five" "six" "seven" "eight" "nine"]))
-        first-numbers
-        (loop [n 0
-               index 0]
-          (if (> index (count line)) nil
-              (if (> n 9)
-                (recur 0 (inc index))
-                (let [[number number-str] (get numbers-and-strings n)]
-                  (if (or (= (str (get line index)) (str number))
-                          (string/starts-with? (subs line index) number-str))
-                    number
-                    (recur (inc n) index))))))
-        last-numbers
-        (loop [n 0
-               index (dec (count line))]
-          (if (< index 0) nil
-              (if (> n 9)
-                (recur 0 (dec index))
-                (let [[number number-str] (get numbers-and-strings n)]
-                  (if (or (= (str (get line index)) (str number))
-                          (string/starts-with? (subs line index) number-str))
-                    number
-                    (recur (inc n) index))))))]
-    [first-numbers last-numbers]))
+               ["zero" "one" "two" "three" "four" "five" "six" "seven" "eight" "nine"]))]
+    (loop [n 0
+           index 0
+           numbers []]
+      (if (> index (count line))
+        numbers
+        (if (> n 9)
+          (recur 0 (inc index) numbers)
+          (let [[number number-str] (get numbers-and-strings n)]
+            (if (or (= (str (get line index)) (str number))
+                    (string/starts-with? (subs line index) number-str))
+              (recur (inc n) index (conj numbers number))
+              (recur (inc n) index numbers))))))))
+
+(defn total-2 [new-input]
+  (apply + (map (fn [digits]  (+ (* 10 (first digits)) (last digits)))
+                (map calibrate-line (string/split-lines new-input)))))
 
 ;; answer 2
-(defn total-2 [new-input]
-  (apply +
-         (map
-          (fn [[f l]] (Integer/parseInt (str f l)))
-          (for [line (string/split-lines new-input)]
-            (calibrate-line line)))))
-
 (total-2 day-1-input)
 
