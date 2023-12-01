@@ -1,4 +1,4 @@
-(ns advent-2023.d1-input)
+(ns advent.2023.d1-input)
 
 (def day-1-input "jjfvnnlfivejj1
 6fourfour

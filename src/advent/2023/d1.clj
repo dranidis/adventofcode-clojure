@@ -1,5 +1,5 @@
-(ns advent-2023.d1
-  (:require [advent-2023.d1-input :refer [day-1-input]]
+(ns advent.2023.d1
+  (:require [advent.2023.d1-input :refer [day-1-input]]
             [clojure.string :as string]))
 
 (def sample-input "1abc2
