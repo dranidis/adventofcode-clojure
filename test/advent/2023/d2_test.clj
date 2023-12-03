@@ -3,10 +3,10 @@
                                     parse-game parse-set sum-of-possible-games
                                     total-power]]
             [advent.2023.d2-input :refer [day-2-input]]
-            [advent.d2-example :refer [input]]
+            [advent.2023.d2-example :refer [input]]
             [clojure.test :refer [deftest is]]))
 
-(deftest d2-tests
+(deftest p1
 
   (is (= {:blue 3
           :red 4} (parse-set " 3 blue, 4 red")))
@@ -31,10 +31,10 @@
 
   (is (= 8 (sum-of-possible-games input)))
 
-  (is (= 2771 (sum-of-possible-games day-2-input)))
-
+  (is (= 2771 (sum-of-possible-games day-2-input))))
 
 ;;  part 2
+(deftest p2
 
   (is (= {:red 4 :green 2 :blue 6}
          (game-max-colors {:id 1
