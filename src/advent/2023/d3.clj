@@ -14,15 +14,10 @@
 ...$.*....
 .664.598..")
 
-(defn characters [input]
-  (let [lines (for [line (str/split-lines input)]
-                line)
-        w (count (first lines))
+(defn make-table [input]
+  (let [lines (str/split-lines input)
         chars (map vec lines)]
     (into [] chars)))
-
-(def table (characters input))
-table
 
 (defn- digits->num [digits]
   (reduce (fn [acc d]
@@ -30,81 +25,115 @@ table
           0
           digits))
 
-(digits->num [4 6 7])
+(defn is-symbol? [a-char]
+  (and (not (Character/isDigit a-char))
+       (not= a-char \.)))
 
-(defn digit? [char] ;; den brika digit? stin clojure.core
-;;   (println "DIGIT? " char)
-  (let [n (int char)]
-    (and (>= n 48) (<= n 57))))
+(defn- coords-of-adjacent-symbols [table x y]
+  (let [total-cols (count (first table))
+        total-rows (count table)]
+    (filter (fn [[_ a-char]]
+              (and (some? a-char) (is-symbol? a-char)))
+            (map (fn [[x y]]
+                   [[x y] (get-in table [x y])])
+                 (filter (fn [[x y]] (and (<= 0 x total-cols)
+                                          (<= 0 y total-rows)))
+                         (map (fn [[dx dy]]
+                                [(+ x dx) (+ y dy)])
+                              [[0 1] [1 0] [0 -1] [-1 0] ;; horizontally & vertically
+                               [1 1] [-1 -1] [1 -1] [-1 1] ;; diagonally
+                               ]))))))
 
-(defn- is-next-to-symbol? [table x y]
-  (let [width (count (first table))
-        height (count table)]
-    (some (fn [s]
-            ;; (println "SOME" s "END")
-            (and (not (nil? s))
-                 (not (digit? s))
-                 (not= s \.)))
-          (map (fn [[x y]]
+(is (= (list [[1 3] \*]) (coords-of-adjacent-symbols (make-table input) 0 2)))
+(is (= (list) (coords-of-adjacent-symbols (make-table input) 0 0)))
+(is (= (list) (coords-of-adjacent-symbols (make-table input) 0 1)))
 
-                ;;  (str (get-in table [x y]))
+(defn next-stars-coords [table x y]
+  (map first (filter (fn [[_ s]] (= s \*))
+                     (coords-of-adjacent-symbols table x y))))
 
-                 (get-in table [x y]))
-               (filter (fn [[x y]] (and (<= 0  x  width)
-                                        (<= 0 y height)))
-                       (map (fn [[dx dy]]
-                              [(+ x dx) (+ y dy)])
-                            [[0 1] [1 0] [0 -1] [-1 0]
-                             [1 1] [-1 -1] [1 -1] [-1 1]]))))))
+(is (= (list [1 3]) (next-stars-coords (make-table input) 0 2)))
 
-
-(is (not (is-next-to-symbol? table 0 0)))
-(is (not (is-next-to-symbol? table 0 1)))
-(is (is-next-to-symbol? table 0 2))
-
-
-
-(defn parse [input]
-  (let [table (characters input)
-        width (count (first table))
-        height (count table)]
+(defn process [input]
+  (let [table (make-table input)
+        total-rows (count (first table))
+        total-cols (count table)]
     (loop [x 0
            y 0
            total 0
            digits []
            next-to-symbol? false
-           gear-numbers []]
-      (println "AT STATE " "x" x "y" y total digits next-to-symbol? gear-numbers)
-      (if (>= y width)
-        (if (< x (dec height))
-          (recur (inc x) 0 total digits  next-to-symbol? gear-numbers)
-          total)
-        (let [ch (str (get-in table [x y]))]
-          (if (digit? (first ch))
-            (let [symbol? (or next-to-symbol? (is-next-to-symbol? table x y))]
-              (recur x
-                     (inc y)
-                     total
-                     (conj digits (read-string ch))
-                     symbol?
-                     gear-numbers))
-            ;; not a digit
+           number-and-star-coords []
+           symbols #{}]
+      (if (>= y total-rows)
+        (if (< x (dec total-cols))
+          (recur (inc x) 0 total digits  next-to-symbol? number-and-star-coords symbols)
+          [total number-and-star-coords])
+        (let [ch (get-in table [x y])]
+          (if (Character/isDigit ch)
+            ;; a number starts or continues 
+            ;; accumulate the digits and the adjacent star coords
+            (let [next-symbols (coords-of-adjacent-symbols table x y)
+                  next-to-symbol? (or next-to-symbol? (seq next-symbols))
+                  digits (conj digits (read-string (str ch)))
+                  symbols (if (seq next-symbols)
+                            (apply conj symbols (next-stars-coords table x y))
+                            symbols)]
+              (recur x (inc y) total digits next-to-symbol? number-and-star-coords symbols))
+            ;; not a digit, a number has been completed; 
+            ;; update the total and star-coords
+            ;; reset next-to-symbol and symbols
             (let  [n (digits->num digits)
                    total (if next-to-symbol?
                            (+ total n)
                            total)
-                   gear-numbers (if next-to-symbol?
-                                  (conj gear-numbers n)
-                                  gear-numbers)]
-              (recur x
-                     (inc y)
-                     total
-                     []
-                     false
-                     gear-numbers))))))))
+                   number-and-star-coords (if next-to-symbol?
+                                            (conj number-and-star-coords [n symbols])
+                                            number-and-star-coords)]
+              (recur x (inc y) total [] false number-and-star-coords #{}))))))))
+
+;; answer 1
+
+(defn answer1 [input]
+  (first (process input)))
+
+(is (= 4361 (answer1 input)))
 
 
+;; part 2 (note that process was also modified)
 
-(parse input)
+(defn coords-symbols [table]
+  (let [width (count (first table))
+        height (count table)]
+    (for [x (range height)
+          y (range width)]
+      [[x y] (get-in table [x y])])))
 
-;; (parse day-3-input)
+(defn star-coords [table]
+  (map first (filter (fn [[_ s]]
+                       (= s \*))
+                     (coords-symbols table))))
+
+(is (= (list [1 3] [4 3] [8 5])
+       (star-coords (make-table input))))
+
+(defn gear-ratio [input star-coord]
+  (let [list-with-number-star-coords (filter
+                                      (fn [[_ set-of-star-coords]]
+                                        (set-of-star-coords star-coord)) ;; contains in set
+                                      (second (process input)))]
+    (if (= 2 (count list-with-number-star-coords))
+      (apply * (map first list-with-number-star-coords))
+      0)))
+
+(defn answer2 [input]
+  (apply + (map #(gear-ratio input %)
+                (star-coords (make-table input)))))
+
+(comment
+  (answer2 day-3-input)
+  ;
+  )
+
+(is (= 467835 (answer2 input)))
+
