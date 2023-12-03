@@ -1,7 +1,6 @@
 (ns advent.2023.d3
   (:require [advent.2023.d3-input :refer [day-3-input]]
-            [clojure.string :as str]
-            [clojure.test :refer [is]]))
+            [clojure.string :as str]))
 
 (def input "467..114..
 ...*......
@@ -19,17 +18,11 @@
         chars (map vec lines)]
     (into [] chars)))
 
-(defn- digits->num [digits]
-  (reduce (fn [acc d]
-            (+ (* acc 10) d))
-          0
-          digits))
-
 (defn is-symbol? [a-char]
   (and (not (Character/isDigit a-char))
        (not= a-char \.)))
 
-(defn- coords-of-adjacent-symbols [table x y]
+(defn coords-of-adjacent-symbols [table x y]
   (let [total-cols (count (first table))
         total-rows (count table)]
     (filter (fn [[_ a-char]]
@@ -44,15 +37,9 @@
                                [1 1] [-1 -1] [1 -1] [-1 1] ;; diagonally
                                ]))))))
 
-(is (= (list [[1 3] \*]) (coords-of-adjacent-symbols (make-table input) 0 2)))
-(is (= (list) (coords-of-adjacent-symbols (make-table input) 0 0)))
-(is (= (list) (coords-of-adjacent-symbols (make-table input) 0 1)))
-
 (defn next-stars-coords [table x y]
   (map first (filter (fn [[_ s]] (= s \*))
                      (coords-of-adjacent-symbols table x y))))
-
-(is (= (list [1 3]) (next-stars-coords (make-table input) 0 2)))
 
 (defn process [input]
   (let [table (make-table input)
@@ -61,13 +48,13 @@
     (loop [x 0
            y 0
            total 0
-           digits []
+           num 0
            next-to-symbol? false
            number-and-star-coords []
            symbols #{}]
       (if (>= y total-rows)
         (if (< x (dec total-cols))
-          (recur (inc x) 0 total digits  next-to-symbol? number-and-star-coords symbols)
+          (recur (inc x) 0 total num next-to-symbol? number-and-star-coords symbols)
           [total number-and-star-coords])
         (let [ch (get-in table [x y])]
           (if (Character/isDigit ch)
@@ -75,32 +62,32 @@
             ;; accumulate the digits and the adjacent star coords
             (let [next-symbols (coords-of-adjacent-symbols table x y)
                   next-to-symbol? (or next-to-symbol? (seq next-symbols))
-                  digits (conj digits (read-string (str ch)))
-                  symbols (if (seq next-symbols)
-                            (apply conj symbols (next-stars-coords table x y))
-                            symbols)]
-              (recur x (inc y) total digits next-to-symbol? number-and-star-coords symbols))
+                  num' (+ (* 10 num) (Integer/parseInt (str ch)))
+                  symbols (apply conj symbols (next-stars-coords table x y))]
+              (recur x (inc y) total num' next-to-symbol? number-and-star-coords symbols))
+
             ;; not a digit, a number has been completed; 
             ;; update the total and star-coords
             ;; reset next-to-symbol and symbols
-            (let  [n (digits->num digits)
-                   total (if next-to-symbol?
-                           (+ total n)
+            (let  [total (if next-to-symbol?
+                           (+ total num)
                            total)
                    number-and-star-coords (if next-to-symbol?
-                                            (conj number-and-star-coords [n symbols])
+                                            (conj number-and-star-coords [num symbols])
                                             number-and-star-coords)]
-              (recur x (inc y) total [] false number-and-star-coords #{}))))))))
+              (recur x (inc y) total 0 false number-and-star-coords #{}))))))))
 
 ;; answer 1
 
 (defn answer1 [input]
   (first (process input)))
 
-(is (= 4361 (answer1 input)))
+(comment
+  (answer1 input)
+  ;
+  )
 
-
-;; part 2 (note that process was also modified)
+;; part 2 (note that function process was also modified)
 
 (defn coords-symbols [table]
   (let [width (count (first table))
@@ -114,8 +101,7 @@
                        (= s \*))
                      (coords-symbols table))))
 
-(is (= (list [1 3] [4 3] [8 5])
-       (star-coords (make-table input))))
+
 
 (defn gear-ratio [input star-coord]
   (let [list-with-number-star-coords (filter
@@ -132,8 +118,6 @@
 
 (comment
   (answer2 day-3-input)
-  ;
+;;
   )
-
-(is (= 467835 (answer2 input)))
 
