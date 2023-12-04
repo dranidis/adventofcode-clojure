@@ -36,49 +36,16 @@ Card 6: 31 18 13 56 72 | 74 77 10 23 35 67 36 11")
 (defn answer1 [input]
   (apply + (map #(points-calc (count (matching-numbers %))) (parse input))))
 
-(is (= 13 (answer1 input)))
-
 
 (comment
-
   (answer1 day-4-input)
 ;
   )
 
 
-
-(comment
-  (def cards (parse input))
-  (def original-cards cards)
-  (def new-cards cards)
-
-
-
-  (def card (first new-cards))
-  (def card-id (:id card))
-  (def next-n (count (matching-numbers card)))
-  (def cards-to-take (take next-n
-                           (filter (fn [c]
-                                     (> (:id c) card-id))
-                                   original-cards)))
-  (def new-cards (sort-by :id (apply conj (rest new-cards)
-                                     (take next-n
-                                           (filter (fn [c]
-                                                     (> (:id c) card-id))
-                                                   original-cards)))))
-
-  new-cards
-
-
-  ;
-  )
-
-
-  ;; all scores
 (defn scores [cards]
   (mapv (fn [c] (count (matching-numbers c))) cards))
 
-  ;; score of card with id
 (defn score [scores id]
   (get scores (dec id)))
 
