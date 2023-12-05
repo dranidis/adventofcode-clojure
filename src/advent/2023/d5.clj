@@ -65,28 +65,24 @@ humidity-to-location map:
             dest-start (first range)]
         (+ (- id source-start) dest-start)))))
 
-(is (= 81 (ranges-map [[50 98 2] [52 50 48]]
-                      79)))
-(is (= 14 (ranges-map [[50 98 2] [52 50 48]]
-                      14)))
-(is (= 57 (ranges-map [[50 98 2] [52 50 48]]
-                      55)))
-(is (= 13 (ranges-map [[50 98 2] [52 50 48]]
-                      13)))
+(is (= 81 (ranges-map [[50 98 2] [52 50 48]] 79)))
+(is (= 14 (ranges-map [[50 98 2] [52 50 48]] 14)))
+(is (= 57 (ranges-map [[50 98 2] [52 50 48]] 55)))
+(is (= 13 (ranges-map [[50 98 2] [52 50 48]] 13)))
 
-(defn id->id [a-map an-id]
-  (ranges-map (:ranges a-map) an-id))
+(defn map-id->id [maps map-key an-id]
+  (ranges-map (:ranges (first (get maps map-key))) an-id))
 
 (defn location [maps seed-id]
   (->> seed-id
-       (id->id (first (get maps "seed")))
-       (id->id (first (get maps "soil")))
-       (id->id (first (get maps "fertilizer")))
-       (id->id (first (get maps "water")))
-       (id->id (first (get maps "light")))
-       (id->id (first (get maps "temperature")))
-       (id->id (first (get maps "humidity")))
-       (id->id (first (get maps "location")))))
+       (map-id->id maps "seed")
+       (map-id->id maps "soil")
+       (map-id->id maps "fertilizer")
+       (map-id->id maps "water")
+       (map-id->id maps "light")
+       (map-id->id maps "temperature")
+       (map-id->id maps "humidity")
+       (map-id->id maps "location")))
 
 (is (= 82 (location (second (parse input)) 79)))
 (is (= 43 (location (second (parse input)) 14)))
@@ -129,10 +125,9 @@ humidity-to-location map:
 
 (defn location2 [maps seed]
   (let [m-f (memoize
-             (fn [f seed]
-               (location maps seed)))
-        max-released (partial m-f m-f)]
-    (max-released seed)))
+             (fn [seed]
+               (location maps seed)))]
+    (m-f seed)))
 
 (def location3 (memoize location))
 
@@ -142,17 +137,29 @@ humidity-to-location map:
         seeds' (expand seeds)
         maps (second info)]
     (apply min (map (fn [seed]
-                      (location3 maps seed)) seeds'))))
+                      (location2 maps seed)) seeds'))))
 
-(is (= 46 (lowest-location-2 input)))
+
 
 (comment
 
   (def totalseedss
     (apply + (map second (partition 2 (first (parse day-5-input))))))
+  (def days-to-complete (/ (/ (/ (* 0.001 totalseedss) 60) 60) 24))
 
-  (lowest-location-2 input)
+  (println "There are totally" (/ totalseedss 1000000.0) "millions seeds\n"
+           "It will take" days-to-complete "days")
+
+  (second (parse day-5-input))
+
+  (time (lowest-location-2 input))
+
+
+
+
   (lowest-location-2 day-5-input)
   ;
   )
+
+(is (= 46 (lowest-location-2 input)))
 
