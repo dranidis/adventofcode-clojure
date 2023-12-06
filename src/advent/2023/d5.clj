@@ -163,3 +163,34 @@ humidity-to-location map:
 
 (is (= 46 (lowest-location-2 input)))
 
+(defn seed-ranges [pi]
+  (vec (map vec (partition 2 (first pi)))))
+
+(seed-ranges input)
+(get-in (second (parse input)) ["seed" 0 :ranges])
+
+(defn- make-range [s-l]
+  [(first s-l) (+ (first s-l) (dec (second s-l)))])
+
+(defn range-interection [[[s1 e1] [s2 e2]]]
+  (cond
+    (or (< e1 s2) (> s1 e2)) nil
+    (and (> e1 s2) (< s1 s2) (< e1 e2)) [s2 e1]
+    (and (< s1 e2) (< s2 s1) (< e2 e1)) [s1 e2]
+    (and (< s1 s2) (> e1 e2)) [s2 e2]
+    :else [s1 e1]))
+
+(defn source-range [[target-start source-start len]]
+  [source-start (+ source-start (dec len))])
+
+(defn intersections [parsed-input source]
+  (map (fn [seed-range]
+         (filter some?
+                 (map (fn [r] (range-interection [seed-range r]))
+                      (map source-range
+                           (get-in (second parsed-input) [source 0 :ranges])))))
+       (map make-range (seed-ranges parsed-input))))
+
+
+(intersections (parse input) "seed")
+
