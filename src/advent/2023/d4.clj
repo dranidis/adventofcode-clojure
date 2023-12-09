@@ -1,5 +1,7 @@
 (ns advent.2023.d4
   (:require [advent.2023.d4-input :refer [day-4-input]]
+            [clojure.math :as math]
+            [clojure.set :as set]
             [clojure.string :as s]
             [clojure.test :refer [is]]))
 
@@ -12,48 +14,28 @@ Card 6: 31 18 13 56 72 | 74 77 10 23 35 67 36 11")
 
 (defn parse [input]
   (for [line (s/split-lines input)]
-    (let [[[_ n l1 l2]] (re-seq #"Card.* (\d+): (.*)\|(.*)" line)
-          card-nr (Integer/parseInt n)
-          l1'  (mapv #(Integer/parseInt %) (s/split (s/trim l1) #"  *"))
-          l2'  (mapv #(Integer/parseInt %) (s/split (s/trim l2) #"  *"))]
-      {:id card-nr
+    (let [[[_ id l1 l2]] (re-seq #"Card.* (\d+): (.*)\|(.*)" line)
+          l1' (read-string (str "[" l1 "]"))
+          l2' (read-string (str "[" l2 "]"))]
+      {:id (parse-long id)
        :winning (set l1')
-       :have l2'})))
+       :have (set l2')})))
 
 (defn matching-numbers [a-card]
-  (let [c a-card]
-    (for [n (:have c)
-          :when ((:winning c) n)]
-      n)))
+  (set/intersection (:have a-card) (:winning a-card)))
 
 (defn points-calc [nr]
-  (if (= nr  0)
-    0
-    (if (= nr 1)
-      1
-      (* 2 (points-calc (dec nr))))))
+  (if (zero? nr) 0 (math/pow 2 (dec nr))))
 
 (defn answer1 [input]
-  (apply + (map #(points-calc (count (matching-numbers %))) (parse input))))
+  (apply + (map #(points-calc (count (matching-numbers %)))
+                (parse input))))
 
-
-(comment
-  (answer1 day-4-input)
-;
-  )
+(is (== 21158 (answer1 day-4-input)))
 
 
 (defn scores [cards]
   (mapv (fn [c] (count (matching-numbers c))) cards))
-
-(defn score [scores id]
-  (get scores (dec id)))
-
-(defn add-all [map-num]
-  (reduce-kv (fn [m k v]
-               (+ m v))
-             0
-             map-num))
 
 (defn increase [totals card-id next-n]
   (let [from (inc card-id)]
@@ -65,19 +47,19 @@ Card 6: 31 18 13 56 72 | 74 77 10 23 35 67 36 11")
         (recur (dec n) (inc from) (update totals from + (get totals card-id)))))))
 
 (defn answer2 [cards]
-  (add-all
-   (let [all-scores (scores cards)
-         number-of-cards (count all-scores)
-         card-totals (reduce (fn [acc c]
-                               (assoc acc (:id c) 1))
-                             {}
-                             cards)]
-     (loop [card-id 1
-            totals card-totals]
-       (if (> card-id number-of-cards)
-         totals
-         (let [next-n (score all-scores card-id)
-               totals' (increase totals card-id next-n)]
-           (recur (inc card-id) totals')))))))
+  (apply +
+         (vals (let [all-scores (scores cards)
+                     number-of-cards (count cards)
+                     initial-totals (zipmap (map :id cards)
+                                            (repeat 1))]
+                 (loop [card-id 1
+                        totals initial-totals]
+                   (if (> card-id number-of-cards)
+                     totals
+                     (let [next-n (get all-scores (dec card-id))
+                           totals' (increase totals card-id next-n)]
+                       (recur (inc card-id) totals'))))))))
 
-(answer2 (parse day-4-input))
+
+(is (= 6050769 (answer2 (parse day-4-input))))
+
