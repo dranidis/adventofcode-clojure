@@ -5,7 +5,6 @@
             [clojure.test :refer [deftest is]]))
 
 (deftest p1
-
   (is (= {:blue 3
           :red 4} (parse-set " 3 blue, 4 red")))
 
@@ -33,7 +32,6 @@
 
 ;;  part 2
 (deftest p2
-
   (is (= {:red 4 :green 2 :blue 6}
          (game-max-colors {:id 1
                            :sets [{:blue 3

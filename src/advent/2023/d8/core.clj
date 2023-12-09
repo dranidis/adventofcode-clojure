@@ -14,18 +14,17 @@
                                               network-line)]
                       {s {:L l :R r}})))]))
 
-(defn answer1 [input start]
+(defn answer1 [input]
   (let [[instructions network] (parse input)]
     (loop [inst (cycle instructions)
-           state start
+           state "AAA"
            steps 0]
       (if (= state "ZZZ")
         steps
         (let [state' (get-in network [state (first inst)])]
           (recur (rest inst) state' (inc steps)))))))
 
-(is (= 2 (answer1 example-1 "AAA")))
-(println "Part 1:" (answer1 input "AAA"))
+(is (= 2 (answer1 example-1)))
 
 ;; part 2
 
@@ -62,4 +61,8 @@
            (states-ending-with network "A")))))
 
 (is (= 6 (answer2 example-2)))
-(println "Part 2:" (answer2 input))
+
+
+(defn -main [& _]
+  (println "Part 1:" (answer1 input))
+  (println "Part 2:" (answer2 input)))

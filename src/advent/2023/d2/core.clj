@@ -1,6 +1,5 @@
 (ns advent.2023.d2.core
-  (:require [clojure.string :as str]
-            [clojure.test :refer [is]]))
+  (:require [clojure.string :as str]))
 
 (def example (slurp "src/advent/2023/d2/example.txt"))
 (def input (slurp "src/advent/2023/d2/input.txt"))
@@ -35,9 +34,6 @@
                           (possible-game? g {:red 12 :green 13 :blue 14}))
                         (parse-games input)))))
 
-(is (= 8 (sum-of-possible-games example)))
-(println "Day 2, Part 1:" (sum-of-possible-games input))
-
 ;; part 2
 
 (defn game-max-colors [game]
@@ -53,6 +49,6 @@
                   (power (game-max-colors game)))
                 (parse-games input))))
 
-(is (= 2286 (total-power example)))
-(println "Day 2, Part 2:" (total-power input))
-
+(defn -main [& _]
+  (println "Day 2, Part 1:" (sum-of-possible-games input))
+  (println "Day 2, Part 2:" (total-power input)))
