@@ -1,14 +1,11 @@
-(ns advent.2023.d7
-  (:require [advent.2023.d7-input :refer [day-7-input]]
-            [clojure.string :as str]
-            [clojure.test :refer [is]]))
+(ns advent.2023.d7.core
+  (:require
+   [clojure.string :as str]
+   [clojure.test :refer [is]]))
 
-(def input "32T3K 765
-T55J5 684
-KK677 28
-KTJJT 220
-QQQJA 483
-")
+(def day-7-input (slurp "src/advent/2023/d7/input.txt"))
+
+(def input (slurp "src/advent/2023/d7/example.txt"))
 
 (defn- parse-hand [hand-str]
   (str/split hand-str #""))
@@ -17,7 +14,7 @@ QQQJA 483
 (defn- parse [input]
   (for [line (str/split-lines input)]
     (let [[hand n] (str/split line #"  *")]
-      [(str/split hand #"") (read-string n)])))
+      [(str/split hand #"") (parse-long n)])))
 
 (def cards ["A" "K" "Q" "J" "T" "9" "8" "7" "6" "5" "4" "3" "2"])
 

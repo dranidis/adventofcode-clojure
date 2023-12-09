@@ -1,18 +1,9 @@
-(ns advent.2023.d8
-  (:require [advent.2023.d8-input :refer [day-8-input]]
-            [clojure.string :as str]
+(ns advent.2023.d8.core
+  (:require [clojure.string :as str]
             [clojure.test :refer [is]]))
 
-(def input "LR
-
-11A = (11B, XXX)
-11B = (XXX, 11Z)
-11Z = (11B, XXX)
-22A = (22B, XXX)
-22B = (22C, 22C)
-22C = (22Z, 22Z)
-22Z = (22B, 22B)
-XXX = (XXX, XXX)")
+(def input (slurp "src/advent/2023/d8/example.txt"))
+(def day-8-input (slurp "src/advent/2023/d8/input.txt"))
 
 (defn parse [input]
   (let [[instructions network] (str/split input #"\n\n")]
