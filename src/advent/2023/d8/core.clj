@@ -2,18 +2,17 @@
   (:require [clojure.string :as str]
             [clojure.test :refer [is]]))
 
-(def input (slurp "src/advent/2023/d8/example.txt"))
-(def day-8-input (slurp "src/advent/2023/d8/input.txt"))
+(def example-1 (slurp "src/advent/2023/d8/example_1.txt"))
+(def example-2 (slurp "src/advent/2023/d8/example_2.txt"))
+(def input (slurp "src/advent/2023/d8/input.txt"))
 
 (defn parse [input]
   (let [[instructions network] (str/split input #"\n\n")]
     [(map keyword (str/split instructions #""))
-     (reduce (fn [acc [from to]]
-               (assoc acc from to))
-             {}
-             (for [network-line (str/split-lines network)]
-               (let [[[_ s l r]] (re-seq #"(...) = \((...), (...)\)" network-line)]
-                 [s {:L l :R r}])))]))
+     (apply merge (for [network-line (str/split-lines network)]
+                    (let [[[_ s l r]] (re-seq #"(...) = \((...), (...)\)"
+                                              network-line)]
+                      {s {:L l :R r}})))]))
 
 (defn answer1 [input start]
   (let [[instructions network] (parse input)]
@@ -25,7 +24,8 @@
         (let [state' (get-in network [state (first inst)])]
           (recur (rest inst) state' (inc steps)))))))
 
-(is (= 14681 (answer1 day-8-input "AAA")))
+(is (= 2 (answer1 example-1 "AAA")))
+(println "Part 1:" (answer1 input "AAA"))
 
 ;; part 2
 
@@ -61,5 +61,5 @@
              (period [instructions network] s))
            (states-ending-with network "A")))))
 
-(is (= 6 (answer2 input)))
-(is (= 14321394058031 (answer2 day-8-input)))
+(is (= 6 (answer2 example-2)))
+(println "Part 2:" (answer2 input))
