@@ -1,21 +1,25 @@
-(ns advent.2023.d2
-  (:require [clojure.string :as s]))
+(ns advent.2023.d2.core
+  (:require [clojure.string :as str]
+            [clojure.test :refer [is]]))
+
+(def example (slurp "src/advent/2023/d2/example.txt"))
+(def input (slurp "src/advent/2023/d2/input.txt"))
 
 (defn parse-set [set-str]
   (reduce (fn [acc num-color]
-            (let [[n col] (s/split (s/trim num-color) #" ")]
-              (assoc acc (keyword col) (read-string n))))
+            (let [[n col] (str/split (str/trim num-color) #" ")]
+              (assoc acc (keyword col) (parse-long n))))
           {}
-          (s/split set-str #",")))
+          (str/split set-str #",")))
 
 (defn parse-game [game-line]
-  (let [game-parts (s/split game-line #"[:;]")
-        id  (read-string (first (re-seq #"\d+" (first game-parts))))
+  (let [game-parts (str/split game-line #"[:;]")
+        id  (parse-long (re-find #"\d+" (first game-parts)))
         sets (map parse-set (rest game-parts))]
     {:id id :sets sets}))
 
 (defn parse-games [input]
-  (for [game-line (s/split-lines input)]
+  (for [game-line (str/split-lines input)]
     (parse-game game-line)))
 
 (defn game-max-of-color [game color-key]
@@ -31,8 +35,8 @@
                           (possible-game? g {:red 12 :green 13 :blue 14}))
                         (parse-games input)))))
 
-;; answer 1
-;; (prn (sum-of-possible-games day-2-input))
+(is (= 8 (sum-of-possible-games example)))
+(println "Part 1:" (sum-of-possible-games input))
 
 ;; part 2
 
@@ -49,6 +53,6 @@
                   (power (game-max-colors game)))
                 (parse-games input))))
 
-;; answer 2
-;; (prn (total-power day-2-input))
+(is (= 2286 (total-power example)))
+(println "Part 2:" (total-power input))
 
