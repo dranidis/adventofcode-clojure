@@ -23,32 +23,22 @@
       (let [h (difference-at-each-step history)]
         (recur h (conj sequences h))))))
 
-(defn extrapolate-value [history]
+(defn extrapolate-value [history op selector]
   (loop [sequences (rest (reverse (get-sequences history)))
          value 0]
     (if (empty? sequences)
       value
-      (recur (rest sequences) (+ (last (first sequences))
-                                 value)))))
+      (recur (rest sequences) (op (selector (first sequences))
+                                  value)))))
 
-(defn answer1 [input]
-  (apply + (map extrapolate-value (parse input))))
+(defn answer [input op selector]
+  (apply + (map (fn [h] (extrapolate-value h op selector))
+                (parse input))))
 
-(is (= 114 (answer1 example)))
-(is (= 1637452029 (answer1 input)))
+(is (= 114 (answer example + last)))
+(prn (answer input + last))
 
 ;; part 2
 
-(defn extrapolate-value-2 [history]
-  (loop [sequences (rest (reverse (get-sequences history)))
-         value 0]
-    (if (empty? sequences)
-      value
-      (recur (rest sequences) (- (first (first sequences))
-                                 value)))))
-
-(defn answer2 [input]
-  (apply + (map extrapolate-value-2 (parse input))))
-
-(is (= 2 (answer2 example)))
-(is (= 908 (answer2 input)))
+(is (= 2 (answer example - first)))
+(prn (answer input - first))
