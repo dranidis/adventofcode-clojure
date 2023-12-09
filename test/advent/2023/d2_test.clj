@@ -1,9 +1,7 @@
 (ns advent.2023.d2-test
-  (:require [advent.2023.d2 :refer [game-max-colors game-max-of-color
-                                    parse-game parse-set sum-of-possible-games
-                                    total-power]]
-            [advent.2023.d2-input :refer [day-2-input]]
-            [advent.2023.d2-example :refer [input]]
+  (:require [advent.2023.d2.core :refer [game-max-colors game-max-of-color
+                                         parse-game parse-set sum-of-possible-games
+                                         total-power example input]]
             [clojure.test :refer [deftest is]]))
 
 (deftest p1
@@ -29,9 +27,9 @@
                                       {:green 2}]}
                               :blue)))
 
-  (is (= 8 (sum-of-possible-games input)))
+  (is (= 8 (sum-of-possible-games example)))
 
-  (is (= 2771 (sum-of-possible-games day-2-input))))
+  (is (= 2771 (sum-of-possible-games input))))
 
 ;;  part 2
 (deftest p2
@@ -45,7 +43,7 @@
                                    :blue 6}
                                   {:green 2}]})))
 
-  (is (= 2286 (total-power input)))
+  (is (= 2286 (total-power example)))
 
 ;; answer 2
-  (is (= 70924 (total-power day-2-input))))
+  (is (= 70924 (total-power input))))

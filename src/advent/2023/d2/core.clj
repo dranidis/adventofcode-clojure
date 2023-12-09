@@ -36,7 +36,7 @@
                         (parse-games input)))))
 
 (is (= 8 (sum-of-possible-games example)))
-(println "Part 1:" (sum-of-possible-games input))
+(println "Day 2, Part 1:" (sum-of-possible-games input))
 
 ;; part 2
 
@@ -54,5 +54,5 @@
                 (parse-games input))))
 
 (is (= 2286 (total-power example)))
-(println "Part 2:" (total-power input))
+(println "Day 2, Part 2:" (total-power input))
 
