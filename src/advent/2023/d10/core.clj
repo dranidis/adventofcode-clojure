@@ -1,16 +1,10 @@
 (ns advent.2023.d10.core
-  (:require [clojure.string :as str]
-            [clojure.test :refer [is]]
-            [clojure.set :as set]))
+  (:require [clojure.string :as str]))
 
 (def input (slurp "src/advent/2023/d10/input.txt"))
 
 (defn parse-line [line]
   (str/split line #""))
-
-
-
-
 
 (defn parse [example]
   (vec (for [line (str/split-lines example)]
@@ -192,7 +186,6 @@
 (defn math-answer2 [the-path]
   (reverse-picks the-path (shoelace the-path)))
 
-;; 433
 (defn -main [& _]
   (println "Using theorems (Shoelace and inverse Pick's): "
            (math-answer2 the-path))
