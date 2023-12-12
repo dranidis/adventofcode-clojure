@@ -6,12 +6,12 @@
 (def example (slurp "src/advent/2023/d12/example.txt"))
 (def input (slurp "src/advent/2023/d12/input.txt"))
 
-(def input "???.### 1,1,3
-.??..??...?##. 1,1,3
-?#?#?#?#?#?#?#? 1,3,1,6
-????.#...#... 4,1,1
-????.######..#####. 1,6,5
-?###???????? 3,2,1")
+;; (def input "???.### 1,1,3
+;; .??..??...?##. 1,1,3
+;; ?#?#?#?#?#?#?#? 1,3,1,6
+;; ????.#...#... 4,1,1
+;; ????.######..#####. 1,6,5
+;; ?###???????? 3,2,1")
 
 (defn- parse-line [line]
   (let [[springs numbers] (str/split line #"  *")
@@ -46,29 +46,52 @@
                       (str start-str (str/replace-first end-str "?" r)))
                     ["#" "."])]
     repls))
+(comment
+  (def springs-str ".??..??...?##.")
 
-(def springs-str ".??..??...?##.")
+  (def pi (parse input))
+  (first pi)
+  (def springs (first (second pi)))
+  (def numbers (second (second pi)))
+  ;
+  )
 
-(defn generate-all [springs-str]
-  (let [len (count springs-str)]
+(defn is-partial-valid? [springs numbers]
+  (let [;; springs-list (str/split springs #"\.")
+        springs-list (re-seq #"[#\?]+" springs)]
+    (and (= (count springs-list) (count numbers))
+         (every? true? (map (fn [s n] (= n (count s))) springs-list numbers)))))
+
+(defn generate-all [springs]
+  (let [len (count springs)]
     (loop [i 0
            replacements #{}
            cnt 0]
-      (when (zero? (mod cnt 10))
-        (prn cnt springs-str (count replacements)))
+      ;; (when (zero? (mod cnt 10))
+      ;;   (prn cnt springs (count replacements)))
+
       (if (>= i len)
         replacements
-        (if (empty? replacements)
-          (recur (inc i) (set (replace-xx springs-str 0)) (inc cnt))
-          (let [replacements (set (flatten (mapv (fn [r]
-                                                   (replace-xx r i))
-                                                 replacements)))]
-            (recur (inc i) replacements (inc cnt))))))))
+        (do
+          ;; (prn i  (get springs i))
+          (if (not= \? (get springs i))
+            (recur (inc i) replacements cnt)
+            (do
+              ;; (prn i  (get springs i) replacements)
+              (if (empty? replacements)
+                (recur (inc i) (set (replace-xx springs 0)) (inc cnt))
+                (let [replacements (set (flatten (mapv (fn [r]
+                                                         (replace-xx r i))
+                                                       replacements)))]
+                  (recur (inc i) replacements (inc cnt)))))))))))
 
 (comment
+  (generate-all springs)
+
   (def springs "..#...#....##.")
   ;
   )
+
 (defn is-valid? [springs numbers]
   (let [;; springs-list (str/split springs #"\.")
         springs-list (re-seq #"#+" springs)]
@@ -79,9 +102,6 @@
 (is (not (is-valid? "##..###" [1 1 3])))
 (is (not (is-valid? "..#...#....##." [1 1 3])))
 (is (is-valid? "..#..#....###." [1 1 3]))
-
-
-
 
 (defn- arrangements [[springs numbers]]
   (vec (distinct (filterv (fn [s] (is-valid? s numbers)) (generate-all springs)))))
@@ -108,7 +128,18 @@
   (apply + (map (fn [s] (count (arrangements s)))
                 (parse input))))
 
+
+;; "Elapsed time: 31.456501 msecs"
+;; "Elapsed time: 7.778614 msecs"
+;; 21
+;; 
+;; 7221
+;; "Elapsed time: 227019.626682 msecs"
+;; 7221
+;; "Elapsed time: 58426.406953 msecs"
+(time (println (answer-1 input)))
 ;; part 2
+
 
 (defn- parse-line-2 [l]
   (let [[springs numbers] (parse-line l)]
@@ -123,4 +154,4 @@
   (apply + (map (fn [s] (count (arrangements s)))
                 (parse-2 input))))
 
-(time (println (answer-2 input)))
+;; (time (println (answer-2 input)))
