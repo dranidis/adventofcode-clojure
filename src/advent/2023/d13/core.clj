@@ -5,21 +5,21 @@
 
 (def input (slurp "src/advent/2023/d13/input.txt"))
 
-(def input "#.##..##.
-..#.##.#.
-##......#
-##......#
-..#.##.#.
-..##..##.
-#.#.##.#.
+;; (def input "#.##..##.
+;; ..#.##.#.
+;; ##......#
+;; ##......#
+;; ..#.##.#.
+;; ..##..##.
+;; #.#.##.#.
 
-#...##..#
-#....#..#
-..##..###
-#####.##.
-#####.##.
-..##..###
-#....#..#")
+;; #...##..#
+;; #....#..#
+;; ..##..###
+;; #####.##.
+;; #####.##.
+;; ..##..###
+;; #....#..#")
 
 (defn transpose [m]
   (apply mapv vector m))
@@ -153,7 +153,7 @@
 ;;       (and (= fi la) (or (= (inc l) r) (mirrored-rec? pattern (inc l) (dec r)))))))
 
 (defn mirrored-rec-smudge? [pattern l r swapped?]
-  (println "mirr?" pattern l r swapped?)
+  ;; (println "mirr?" pattern l r swapped?)
   (if (>= l r)
     false
     (let [fi (nth pattern l)
@@ -168,11 +168,13 @@
         (if smud?
           (or (= (inc l) r) (mirrored-rec-smudge? pattern (inc l) (dec r) true))
           (and (= fi la)
-               (or (= (inc l) r) (mirrored-rec-smudge? pattern (inc l) (dec r) smud?))))))))
+               (or (and (= (inc l) r)
+                        swapped?)
+                   (mirrored-rec-smudge? pattern (inc l) (dec r) false))))))))
 
 
 (defn- reflection-left-smudge [pattern left-index right-index]
-  (println "reflection-left-smudge" left-index right-index)
+  ;; (println "reflection-left-smudge" left-index right-index)
   (if (mirrored-rec-smudge? pattern left-index right-index false)
     (inc (quot (+ right-index left-index) 2))
     (if (>= left-index right-index)
@@ -180,7 +182,7 @@
       (reflection-left-smudge pattern (inc left-index) right-index))))
 
 (defn- reflection-right-smudge [pattern left-index right-index]
-  (println "reflection-right-smudge" left-index right-index)
+  ;; (println "reflection-right-smudge" left-index right-index)
   (if (mirrored-rec-smudge? pattern left-index right-index false)
     (inc (quot (+ right-index left-index) 2))
     (if (>= left-index right-index)
