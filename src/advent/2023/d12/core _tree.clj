@@ -1,4 +1,4 @@
-(ns advent.2023.d12.core
+(ns advent.2023.d12.core-tree
   (:require
    [clojure.string :as str]
    [clojure.test :refer [is]]))
@@ -6,12 +6,12 @@
 ;; (def example (slurp "src/advent/2023/d12/example.txt"))
 (def input (slurp "src/advent/2023/d12/input.txt"))
 
-;; (def input "???.### 1,1,3
-;; .??..??...?##. 1,1,3
-;; ?#?#?#?#?#?#?#? 1,3,1,6
-;; ????.#...#... 4,1,1
-;; ????.######..#####. 1,6,5
-;; ?###???????? 3,2,1")
+(def input "???.### 1,1,3
+.??..??...?##. 1,1,3
+?#?#?#?#?#?#?#? 1,3,1,6
+????.#...#... 4,1,1
+????.######..#####. 1,6,5
+?###???????? 3,2,1")
 
 (def cnt (atom 1))
 
@@ -24,23 +24,6 @@
   (vec (for [line (str/split-lines input)]
          (parse-line line))))
 
-;; (str/index-of springs \?)
-
-;; ;; find all indices of ?
-;; ;; a ? is either "." or "#"
-
-
-
-;; (def indices [0 1 2]) ; for ???.###
-;; (for [i indices
-;;       repl ["#" "."]]
-;;   (loop [s springs
-;;          i 0]
-;;     ((str/replace-first s "?" repl))))
-
-;; (def i 0)
-;; (def substr (subs springs i))
-
 (defn replace-xx [springs i total]
   (let [start-str (subs springs 0 i)
         end-str (subs springs i)]
@@ -51,8 +34,6 @@
             ["#" "."]))))
 
 (is (= [".###.##.#..."] (replace-xx ".###.##.#???" 9 6)))
-
-
 
 (comment
   (def springs-str ".??..??...?##.")
@@ -81,11 +62,6 @@
 
   ;
   )
-
-(defn- if-only-#-correct-size? [s n]
-  (let [len (count s)]
-    (or (> (count (str/replace s "#" "")) 0)
-        (= n len))))
 
 (comment
   (def springs ".##.#.#.##.#.#.##..#.#.##.#.#.##.#.#.#.??#????#.#???#?")
@@ -140,42 +116,79 @@
 (is-partial-valid? ".##.#.#.##.#.#.##..#.#.##.#.#.##.#.#.#.??#????#.#???#?"
                    [2 1 1 2 1 1 2 1 1 2 1 1 2 1 1])
 
-(defn generate-all [springs numbers]
-  (println @cnt springs numbers)
-  (swap! cnt inc)
-  (let [len (count springs)
-        total (apply + numbers)]
-    (loop [i 0
-           replacements #{}
-           cnt 0]
-      ;; (when (zero? (mod cnt 10))
-      ;;   (prn cnt springs (count replacements)))
-      (if (>= i len)
-        replacements
-        (do
-          ;; (prn i  (get springs i))
-          (if (not= \? (get springs i))
-            (recur (inc i) replacements cnt)
-            (do
-              ;; (prn i  (get springs i) replacements)
-              (if (empty? replacements)
-                (recur (inc i) (set (replace-xx springs 0 total)) (inc cnt))
-                (let [replacements
-                      (set (flatten
-                            (mapv (fn [r]
-                                    (if (str/index-of r "?")
-                                      (filter
-                                       (fn [s] (is-partial-valid? s numbers))
-                                       (replace-xx r i total))
-                                      [r]))
-                                  replacements)))]
-                  (recur (inc i) replacements (inc cnt))))))))))
-                  ;
+
+
+(defn generate-tree [s]
+  (if-let [next-?-pos (str/index-of s "?")]
+    (let [consume-str (subs s 0 next-?-pos)
+          real-rest (subs s (inc next-?-pos))]
+      [consume-str [(generate-tree (str "#" real-rest))
+                    (generate-tree (str "." real-rest))]])
+    s))
+
+
+(defn prune [tree total]
+  (cond
+    (vector? tree)
+    (let [root (first tree)
+          left-right (second tree)
+          left (first left-right)
+          right (second left-right)
+          count#s (count (filter (fn [s] (= s \#)) root))]
+      (if (< count#s total)
+        [root
+         [(prune left (- total count#s))
+          (prune right (- total count#s))]]
+        root))
+    :else (if (= (count (filter (fn [s] (= s \#)) tree)) total)
+            tree nil)))
+
+(prune (generate-tree ".??..??...?##.") 5)
+
+(comment
+
+
+
+
+  (generate-tree ".??..??...?##.")
+  (generate-tree "###?...")
+  (prune (generate-tree "#?#") 2)
+  (prune (generate-tree "..?...?...") 2)
+
+
+
+
+  ;
   )
 
-;; (generate-all ".##..??...?##." [1 1 3])
+
+(comment
 
 
+  (subs "???.###" 4)
+  "???.###" 1,1,3 = 5
+
+  ;; create the tree recursively and check the total
+  ;; If wrong prune recursively backwards.
+
+  [""
+   ["#"
+    ["#"
+     ["#.###"]] ;p
+    ["."
+     ["#.###"] ; ok
+     ["..###"]]]  ;p
+   ["." ;p
+    ["#" ;p
+     ["#.###"]] ;p
+    ["." ;p
+     ["..###"]]]] ;p
+
+
+
+
+;
+  )
 (defn generate-all-1 [springs numbers]
   (let [len (count springs)
         total (apply + numbers)]
@@ -334,8 +347,6 @@
 (comment
   (map (fn [s] (count (arrangements s)))
        (parse-2 input))
-
-  (first (parse-2 input))
 
   1
   16384
