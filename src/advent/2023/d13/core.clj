@@ -199,3 +199,13 @@
 ((def pattern (nth (parse input) 0))
 
  (reflection-right-smudge pattern 0 (dec (count pattern))))
+
+(defn answer-2 [input] (let  [a1 (apply + (remove nil? (map reflection-p-smudge (parse input))))
+                              a2 (apply + (remove nil? (map (fn [p] (reflection-p-smudge (transpose p))) (parse input))))]
+                         (+ (* a1 100) a2)))
+
+(answer-2 input)
+(comment
+  (apply + (remove nil? (map reflection-p-smudge (parse input))))
+
+  (apply + (remove nil? (map (fn [p] (reflection-p-smudge (transpose p))) (parse input)))))
