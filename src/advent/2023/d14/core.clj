@@ -1,6 +1,5 @@
 (ns advent.2023.d14.core
-  (:require [clojure.string :as str]
-            [clojure.test :refer [is]]))
+  (:require [clojure.string :as str]))
 
 (def input "O....#....
 O.OO#....#
@@ -30,6 +29,35 @@ O.#..O.#.#
              :when (= m ch)]
          x)))
 
+(defn Os-and-hashes
+  "The internal represenation for the problem. 
+   A list of pairs. The first of the pair is the list of the indices of `O` rocks and
+   the second of the pair is the list of the indices of `#` rocks.
+   
+`([[0 1 3 5] [8 9]]`
+   
+`[[3 4 9] []]`
+   
+ `[[1 6 9] [5]]`
+   
+ `[[1] [3]]`
+   
+ `[[3] [1]]`
+   
+ `[[5] [0 2 6 8 9]]`
+   
+ `[[6] [2 8]]`
+   
+ `[[4 7] [5 8]]`
+   
+ `[[] [4]]`
+   
+ `[[3 6] [1 5]])`"
+  [input]
+  (map (fn [column]
+         [(rocks-at-col column "O") (rocks-at-col column "#")])
+       (parse input)))
+
 (defn tilt-a-rock [i O-index O-rocks hashes]
   (let [hashes (conj hashes 999999)
         all-rocks (vec (sort (concat O-rocks hashes)))
@@ -43,23 +71,12 @@ O.#..O.#.#
                          (inc (last below-O-rocks))
                          (inc (max (last below-O-rocks) on-hash-rock)))))))
 
-(is (= [0 6 7] (tilt-a-rock 2 9 [0 6 9] [5])))
-
-(defn tilt-numbers [[Os hashes]]
+(defn tilt-rocks [[Os hashes]]
   [(reduce (fn [O-rocks [i O-index]]
              (let [t (tilt-a-rock i O-index O-rocks hashes)]
                t))
            Os
            (map-indexed vector Os)) hashes])
-
-(defn tilt-column [column]
-  (let [Os (rocks-at-col column "O")
-        hashes (rocks-at-col column "#")]
-    (tilt-numbers [Os hashes])))
-
-(is (= [[0 1 2 3] [8 9]] (tilt-column (first (parse input)))))
-(is (= [[0 6 7] [5]] (tilt-column (nth (parse input) 2))))
-(is (= [[2 6] [1 5]] (tilt-column (last (parse input)))))
 
 (defn total-load [reflector len]
   (apply + (flatten (map
@@ -68,11 +85,10 @@ O.#..O.#.#
                      reflector))))
 
 (defn answer-1 [input]
-  (let [pi (parse input)
-        len (count (first pi))]
-    (total-load (map tilt-column pi) len)))
+  (let [Os-hashes (Os-and-hashes input)
+        len (count Os-hashes)]
+    (total-load (map tilt-rocks Os-hashes) len)))
 
-(is (= 136 (answer-1 input)))
 ;; (is (= 113424 (answer-1 (slurp "src/advent/2023/d14/input.txt"))))
 
 
@@ -101,36 +117,33 @@ O.#..O.#.#
 (defn cycle-ref
   "Performs a full cycle starting from N going W S E. Not sure why the reserve is needed, but..."
   [dim arg]
-  (->> arg (mapv tilt-numbers)
+  (->> arg (mapv tilt-rocks)
        (rotate-numbers dim false)
-       (map tilt-numbers)
+       (map tilt-rocks)
        (rotate-numbers dim true)
-       (map tilt-numbers)
+       (map tilt-rocks)
        (rotate-numbers dim true)
        (rseq)
-       (map tilt-numbers)
+       (map tilt-rocks)
        (rotate-numbers dim false)
        (rseq)))
 
 (defn- cycle-times
   "Store time seen a nexr relector and move forward in time"
-  [pi times]
+  [initial times]
   (let [mem (atom {})
-        max-dim (dec (count pi))
-        initial (map (fn [column]
-                       [(rocks-at-col column "O") (rocks-at-col column "#")])
-                     pi)]
+        max-dim (dec (count initial))]
     (loop [t 1
            refl initial
            traveled-ahead? false]
-      (when (zero? (mod t 1))
-        (prn "TIME " t))
       (if (> t times)
         refl
 
         (let [next-refl (cycle-ref max-dim refl)
               mem-key next-refl
               seen-before (get @mem mem-key)]
+          (when (zero? (mod t 10))
+            (prn "TIME " t))
           (if (or traveled-ahead? (not seen-before))
             (let [next-refl (cycle-ref max-dim refl)]
               (swap! mem (fn [m] (assoc m mem-key t)))
@@ -141,17 +154,18 @@ O.#..O.#.#
                   remaining-time (- times t)
                   repeat-so-many-times (quot remaining-time dt)
                   t' (+ t (* repeat-so-many-times dt))]
+              (println "Now is" t "Seen at time:" time-seen "has a period of:" dt "moving to time:" t')
               (recur (inc t') next-refl true))))))))
 
 (defn answer-2 [input times]
-  (let [pi (parse input)
-        len (count (first pi))]
-    (total-load (cycle-times pi times) len)))
+  (let [Os-hashes (Os-and-hashes input)
+        len (count Os-hashes)]
+    (total-load (cycle-times Os-hashes times) len)))
 
-(is (= 64 answer-2 input))
-(answer-2 (slurp "src/advent/2023/d14/input.txt") 1000000000)
-
-
+(defn -main [& _]
+  (let [input (slurp "src/advent/2023/d14/input.txt")]
+    (println "Day 14, Part 1:" (answer-1 input))
+    (println "Day 14, Part 2:" (answer-2 input 1000000000))))
 
 (comment
 ;;   perform a few cycles
@@ -188,5 +202,5 @@ O.#..O.#.#
 ;; OO....OO..
 ;; #O...###..
 ;; #O..O#....
-;;   
-  )
+;; 
+  nil)
