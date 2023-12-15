@@ -129,7 +129,7 @@ O.#..O.#.#
        (rseq)))
 
 (defn- cycle-times
-  "Store time seen a nexr relector and move forward in time"
+  "Store time seen a next relector and move forward in time"
   [initial times]
   (let [mem (atom {})
         max-dim (dec (count initial))]
@@ -178,6 +178,8 @@ O.#..O.#.#
          (cycle-ref dim)
        ;
          ))
+  (asnwer-2 input 1000000)
+
 
 ;; Rotate to west and tilt
 ;; OOO0.#O...
