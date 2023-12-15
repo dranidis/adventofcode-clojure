@@ -29,21 +29,16 @@
              (mapv second (remove has-label? indexed-lenses)))
 
       (if-let [[index _] (first (filter has-label? indexed-lenses))]
-        (update boxes the-box-id (fn [box]
-                                   (assoc box index [label focal])))
+        (update boxes the-box-id #(assoc % index [label focal]))
         (update boxes the-box-id conj [label focal])))))
 
 (defn answer-2 [input]
-  (let [boxes-init (zipmap (range 256)
-                           (map (fn [_] []) (range 256)))
-        boxes-after-steps (reduce step
-                                  boxes-init
+  (let [boxes-after-steps (reduce step
+                                  (reduce (fn [m v] (assoc m v [])) {} (range 256))
                                   (parse input))]
-    (apply + (flatten (map (fn [[box-nr lenses-list]]
-                             (map (fn [[pos-in-box [_ focal]]]
-                                    (* (inc box-nr) (inc pos-in-box) focal))
-                                  (map-indexed vector lenses-list)))
-                           boxes-after-steps)))))
+    (apply + (for [[box-i lenses] boxes-after-steps]
+               (apply + (for [[lens-i [_ fl]] (map-indexed vector lenses)]
+                          (* (inc box-i) (inc lens-i) fl)))))))
 
 (defn -main [& _]
   (let [input (slurp "src/advent/2023/d15/input.txt")]
