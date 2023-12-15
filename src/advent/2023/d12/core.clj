@@ -100,6 +100,23 @@
   (= (count remove-trail-?-s) (get numbers i))
   ;
   )
+
+(defn valid-part? [s n]
+  (let [m-f (memoize
+             (fn [s n]
+               (let [remove-trail-?-s (str/replace s #"\?*$" "")]
+                 (or (= "" remove-trail-?-s)                            ; only ???s
+                     (if (= "" (str/replace remove-trail-?-s "#" ""))  ;; only ###s
+                       (if (<= (count remove-trail-?-s) n) ; less= ### than number
+                         (if (= remove-trail-?-s s) ;; not removed any ?
+                           (if (= (count s) n) ; exactly ###
+                             :recur
+                             false)
+                           true)
+                         false)
+                       true)))))]
+    (m-f s n)))
+
 (defn is-partial-valid? [springs numbers]
   ;; (prn "IS partial valid?" springs numbers)
   (let [springs-list (re-seq #"[#?]+" springs)
@@ -109,20 +126,10 @@
                break? false]
           (if (or break? (>= i (count springs-list)) (>= i (count numbers)))
             valid?
-            (let [s (nth springs-list i)
-                  remove-trail-?-s (str/replace s #"\?*$" "")]
-              (if (= "" remove-trail-?-s) ; only ????
-                true
-                (let [only-#-? (= "" (str/replace remove-trail-?-s "#" ""))]
-                  (if only-#-?
-                    (if (<= (count remove-trail-?-s) (nth numbers i)) ; less= ### than number
-                      (if (= remove-trail-?-s s) ;; not removed any ?
-                        (if (= (count s) (get numbers i)) ; exactly ###
-                          (recur (inc i) true false)
-                          false)
-                        true)
-                      false)
-                    true))))))]
+            (let [v? (valid-part? (nth springs-list i) (nth numbers i))]
+              (if (= :recur v?)
+                (recur (inc i) true false)
+                v?))))]
     ;; (println springs numbers ans)
     ans))
 
@@ -137,8 +144,9 @@
 (is (is-partial-valid? "#.??.######..#####." [1 6 5]))
 (is (not (is-partial-valid? ".#..###.??.###???.###???.###???.###" [1 1 3 1 1 3 1 1 3 1 1 3 1 1 3])))
 
-(is-partial-valid? ".##.#.#.##.#.#.##..#.#.##.#.#.##.#.#.#.??#????#.#???#?"
-                   [2 1 1 2 1 1 2 1 1 2 1 1 2 1 1])
+(is (is-partial-valid? ".##.#.#.##.#.#.##..#.#.##.#.#.##.#.#.#.??#????#.#???#?"
+                       [2 1 1 2 1 1 2 1 1 2 1 1 2 1 1]))
+
 
 (defn generate-all [springs numbers]
   (println @cnt springs numbers)
