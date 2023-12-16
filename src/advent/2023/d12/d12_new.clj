@@ -1,13 +1,6 @@
 (ns advent.2023.d12.d12-new
   (:require [clojure.string :as str]))
 
-(def input "???.### 1,1,3
-.??..??...?##. 1,1,3
-?#?#?#?#?#?#?#? 1,3,1,6
-????.#...#... 4,1,1
-????.######..#####. 1,6,5
-?###???????? 3,2,1")
-
 (defn- parse-line [line]
   (let [[springs numbers] (str/split line #"  *")
         numbers (read-string (str "[" (str/replace numbers #"," " ") "]"))]
@@ -61,13 +54,6 @@
         score-m (partial m-f m-f)]
     (score-m 0 0 0)))
 
-;; "Elapsed time: 385.464107 msecs"
-;; 7221
-;; "Elapsed time: 8918.151822 msecs"
-;; 7139671893722
-(time (apply + (map score
-                    (parse (slurp "src/advent/2023/d12/input.txt")))))
-
 (defn- parse-line-2 [l]
   (let [[springs numbers] (parse-line l)]
     [(vec (concat springs ["?"] springs ["?"] springs ["?"] springs ["?"] springs))
@@ -77,5 +63,8 @@
   (vec (for [line (str/split-lines input)]
          (parse-line-2 line))))
 
-(time (apply + (map score
-                    (parse-2 (slurp "src/advent/2023/d12/input.txt"))))) 
+
+(defn -main [& _]
+  (let [input (slurp "src/advent/2023/d12/input.txt")]
+    (time (println "Day 1, Part 1:" (apply + (map score (parse input)))))
+    (time (println "Day 1, Part 2:" (apply + (map score (parse-2 input)))))))
