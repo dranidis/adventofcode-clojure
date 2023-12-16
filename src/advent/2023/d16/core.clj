@@ -32,48 +32,49 @@
 (defn light-beam [pi rows cols start-r start-c energized visited start-dir-r start-dir-c]
   (loop [r start-r
          c start-c
-         energized energized
-         visited visited
          dir-r start-dir-r
          dir-c start-dir-c]
     (if (and (< -1  r rows) (< -1  c cols) (not (visited [r c dir-r dir-c])))
-      (let [ch (get-in pi [r  c])
-            ;; _ (swap! visited-m conj [r c dir-r dir-c])
-            ]
+      (let [ch (get-in pi [r  c])]
         (case ch
-          "." (recur (+ r dir-r) (+ c dir-c) (conj! energized [r c])
-                     (conj! visited [r c dir-r dir-c]) dir-r dir-c)
+          "." (let [_ (conj! energized [r c])
+                    _ (conj! visited [r c dir-r dir-c])]
+                (recur (+ r dir-r) (+ c dir-c)
+                       dir-r dir-c))
 
-          ("\\" "/") (let [[dir-r dir-c] (flip-directions dir-r dir-c ch)]
-                       (recur (+ r dir-r) (+ c dir-c)  (conj! energized [r c])
-                              (conj! visited [r c dir-r dir-c]) dir-r dir-c))
+          ("\\" "/") (let [[dir-r dir-c] (flip-directions dir-r dir-c ch)
+                           _ (conj! energized [r c])
+                           _ (conj! visited [r c dir-r dir-c])]
+                       (recur (+ r dir-r) (+ c dir-c)
+                              dir-r dir-c))
 
           "|" (if (= dir-r 0)
-                (let [to-dn (light-beam pi rows cols (inc r) c
-                                        (conj! energized [r c])
-                                        (conj! visited [r c dir-r dir-c])
-                                        1 0)
-                      to-up (light-beam pi rows cols (dec r) c
-                                        (conj! energized [r c])
-                                        (conj! visited [r c dir-r dir-c])
-                                        -1 0)]
+                (let [_ (light-beam pi rows cols (inc r) c
+                                    (conj! energized [r c])
+                                    (conj! visited [r c dir-r dir-c])
+                                    1 0)
+                      _ (light-beam pi rows cols (dec r) c
+                                    (conj! energized [r c])
+                                    (conj! visited [r c dir-r dir-c])
+                                    -1 0)]
                   energized)
-                (recur (+ r dir-r) (+ c dir-c)  (conj! energized [r c])
-                       (conj! visited [r c dir-r dir-c]) dir-r dir-c))
+                (let [_ (conj! energized [r c])
+                      _ (conj! visited [r c dir-r dir-c])]
+                  (recur (+ r dir-r) (+ c dir-c) dir-r dir-c)))
 
           "-" (if (= dir-c 0)
-                (let [to-rt (light-beam pi rows cols r (inc c)
-                                        (conj! energized [r c])
-                                        (conj! visited [r c dir-r dir-c])
-                                        0 1)
-                      to-lf (light-beam pi rows cols r (dec c)
-                                        (conj! energized [r c])
-                                        (conj! visited [r c dir-r dir-c])
-                                        0 -1)]
+                (let [_ (light-beam pi rows cols r (inc c)
+                                    (conj! energized [r c])
+                                    (conj! visited [r c dir-r dir-c])
+                                    0 1)
+                      _ (light-beam pi rows cols r (dec c)
+                                    (conj! energized [r c])
+                                    (conj! visited [r c dir-r dir-c])
+                                    0 -1)]
                   energized)
-                (recur (+ r dir-r) (+ c dir-c)  (conj! energized [r c])
-                       (conj! visited [r c dir-r dir-c])
-                       dir-r dir-c))
+                (let [_ (conj! energized [r c])
+                      _ (conj! visited [r c dir-r dir-c])]
+                  (recur (+ r dir-r) (+ c dir-c)  dir-r dir-c)))
           (prn "no math" ch)))
       energized)))
 
