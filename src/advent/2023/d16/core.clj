@@ -1,18 +1,5 @@
 (ns advent.2023.d16.core
-  (:require [clojure.set :as set]
-            [clojure.string :as str]
-            [clojure.test :refer [is]]))
-
-(def input ".|...\\....
-|.-.\\.....
-.....|-...
-........|.
-..........
-.........\\
-..../.\\\\..
-.-.-/..|..
-.|....-|.\\
-..//.|....")
+  (:require [clojure.string :as str]))
 
 (defn str->2D
   "Read a string containing new-lines into a 2 dimensional vector of characters"
@@ -26,8 +13,6 @@
     "\\" [dir-c dir-r]
     "/" [(* -1 dir-c) (* -1 dir-r)]
     :else "Unknown flip"))
-
-(def visited-m (atom #{}))
 
 (defn light-beam [pi rows cols start-r start-c energized visited start-dir-r start-dir-c]
   (loop [r start-r
@@ -83,14 +68,7 @@
   (let [pi (str->2D input)
         rows (count pi)
         cols (count (first pi))]
-    (reset! visited-m #{})
-    ;; (prn rows cols visited-m)
-    ;; (pp/pprint pi)
-
     (persistent! (light-beam pi rows cols r c (transient #{}) (transient #{}) dir-r dir-c))))
-
-(is (= 51 (count (all input 0 3 1 0))))
-
 
 (defn confs [input]
   (let [pi (str->2D input)
@@ -102,16 +80,8 @@
                                  [[0 c 1 0] [(dec rows) c -1 0]]))]
     (apply conj all-rows all-cols)))
 
-(comment
-
-  (apply max (map (fn [[r c dir-r dir-c]]
-                    (count (all input r c dir-r dir-c))) (confs input)))
-  ;
-  )
-
 (defn answer-1 [input]
   (count (all input 0 0 0 1)))
-
 
 (defn answer-2 [input]
   (apply max (map (fn [[r c dir-r dir-c]]
