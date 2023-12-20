@@ -100,46 +100,68 @@
          signals [[nil :broadcaster 0]]
          low-pulses 1
          high-pulses 0
-         t times]
+         t 1]
     ;; (pprint/pprint modules)
     ;; (println signals low-pulses high-pulses)
-    (if (and (= t 1) (empty? signals))
-      (* low-pulses high-pulses)
 
-      (if (empty? signals)
-        (do
+;; commented for part 2
+    ;; (if (and (= t 1) (empty? signals))
+    ;;   (* low-pulses high-pulses)
+
+    (if (empty? signals)
+      (do
           ;; (println "T" t "L" low-pulses  "H" high-pulses)
-          (recur modules
-                 [[nil :broadcaster 0]]
-                 (inc low-pulses)
-                 high-pulses
-                 (dec t)))
+        (when (zero? (mod t 100000))
+          (println "time" t "..."))
+        (recur modules
 
-        (let [[modules signals] (reduce (fn [[m s] sig]
-                                          (let [[mods sigs] (process-signal m sig)]
-                                            [mods (apply conj s sigs)]))
-                                        [modules []]
-                                        signals)
-              sigs (map (fn [[f t s]] s) signals)
-              high (apply + sigs)
-              low (- (count sigs) high)
-              sigs-to-rx (filter (fn [[f t s]] (and (= 0 s) (= t :rx))) signals)
-              _ (when (seq sigs-to-rx)
-                  (println "TIME AT " t signals))]
+               [[nil :broadcaster 0]]
+               (inc low-pulses)
+               high-pulses
+               (inc t)))
 
-          (recur modules signals (+ low-pulses low) (+ high-pulses high) t))))))
+      (let [[modules signals] (reduce (fn [[m s] sig]
+                                        (let [[mods sigs] (process-signal m sig)]
+                                          [mods (apply conj s sigs)]))
+                                      [modules []]
+                                      signals)
+            sigs (map (fn [[f t s]] s) signals)
+            high (apply + sigs)
+            low (- (count sigs) high)
+            sigs-to-rx (filter (fn [[f t s]] (and (= 0 s) (= t :rx))) signals)
+            _ (when (seq sigs-to-rx)
+                (println "TIME AT " t signals))]
+
+        (recur modules signals (+ low-pulses low) (+ high-pulses high) t)))))
+          ;; )
 
 ;; (pprint/pprint (process-single (parse input) 10))
-(comment
-
-  (get (connect-conjs (parse (slurp "src/advent/2023/d20/input.txt"))) :gf)
-  ;
-  )
 
 (defn -main [& _]
 
   ;; (pprint/pprint (process-single (connect-conjs (parse input)) 1000))
   ;; (pprint/pprint (process-single (connect-conjs (parse input-2)) 1000))
   (pprint/pprint (process-single (connect-conjs (parse (slurp "src/advent/2023/d20/input.txt"))) 1000))
+  ;
+  )
+
+
+(comment
+
+  (def modules (connect-conjs (parse (slurp "src/advent/2023/d20/input.txt"))))
+
+
+  (get modules :pg)
+
+  ;; only one to :rx from :gf
+  (filter (fn [m] ((:to m) :pg)) (vals modules))
+  ;; all modules to :gf
+  (def first-gen (filter (fn [m] ((:to m) :gf)) (vals modules)))
+
+  (def second-gen (filter (fn [m1]
+                            (some (fn [m2] ((:to m1) m2)) first-gen))
+                          (vals modules)))
+
+
   ;
   )
