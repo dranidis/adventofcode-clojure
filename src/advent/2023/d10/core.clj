@@ -179,12 +179,11 @@
 ;; https://en.wikipedia.org/wiki/Pick%27s_theorem
 ;; A = i + b/2 - 1
 ;; Area A, i num of integer points inside, b the number of points on the boundary
-(defn reverse-picks [the-path area]
-  (let [b (dec (count the-path))]
-    (inc (- area (/ b 2)))))
+(defn reverse-picks [b area]
+  (inc (- area (/ b 2))))
 
 (defn math-answer2 [the-path]
-  (reverse-picks the-path (shoelace the-path)))
+  (reverse-picks (dec (count the-path)) (shoelace the-path)))
 
 (defn -main [& _]
   (println "Using theorems (Shoelace and inverse Pick's): "
