@@ -2,13 +2,12 @@
   (:require
    [clojure.string :as str]))
 
-;; (def example (slurp "src/advent/2024/d3/example.txt"))
+;; (def input "xmul(2,4)%&mul[3,7]!@^do_not_mul(5,5)+mul(32,64]then(mul(11,8)mul(8,5))")
 (def input (slurp "src/advent/2024/d3/input.txt"))
 
 (defn perform-multiplication
   [multiplication]
-  (let [[[_ x y]] (re-seq #"mul\((\d+),(\d+)\)" multiplication)]
-    (* (parse-long x) (parse-long y))))
+  (apply * (map parse-long (re-seq #"\d+" multiplication))))
 
 ;; Part 1
 
@@ -21,13 +20,13 @@
 
 (defn answer-2
   [input]
-  (let [instructions (re-seq #"mul\((\d+),(\d+)\)|do\(\)|don't\(\)" (str/join input))]
+  (let [instructions (re-seq #"mul\(\d+,\d+\)|do\(\)|don't\(\)" (str/join input))]
     (loop [instructions instructions
            acc 0
            enabled true]
       (if (empty? instructions)
         acc
-        (let [instruction (ffirst instructions)]
+        (let [instruction (first instructions)]
           (case instruction
             "do()" (recur (rest instructions) acc true)
             "don't()" (recur (rest instructions) acc false)
@@ -38,7 +37,3 @@
 (defn -main [& _]
   (println "Day 1, Part 1:" (answer-1 input))
   (println "Day 1, Part 2:" (answer-2 input)))
-
-
-
-
