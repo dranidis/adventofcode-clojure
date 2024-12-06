@@ -1,6 +1,6 @@
 (ns advent.2023.d21.core
-  (:require [clojure.set :as set]
-            [clojure.string :as str]))
+  (:require
+   [advent.2023.d23.core :refer [str->2D]]))
 
 (def input "...........
 .....###.#.
@@ -13,15 +13,6 @@
 .##.#.####.
 .##..##.##.
 ...........")
-
-(defn str->2D
-  "Read a string containing new-lines into a 2 dimensional vector of characters"
-  [input]
-  (vec (for [line (str/split-lines input)]
-         (vec (for [c line]
-                (str c))))))
-
-
 
 (defn answer [input times]
   (let [pi (str->2D input)

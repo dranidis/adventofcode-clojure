@@ -1,6 +1,6 @@
 (ns advent.2024.d4.core
   (:require
-   [clojure.string :as str]))
+   [advent.2023.d23.core :refer [str->2D]]))
 
 ;; (def input "MMMSXXMASM
 ;; MSAMXMSMSA
@@ -14,12 +14,6 @@
 ;; MXMXAXMASX")
 (def input (slurp "src/advent/2024/d4/input.txt"))
 
-(defn str->2D
-  "Read a string containing new-lines into a 2 dimensional vector of characters"
-  [input]
-  (vec (for [line (str/split-lines input)]
-         (vec (for [c line]
-                (str c))))))
 ;; Part 1
 
 (defn answer-1

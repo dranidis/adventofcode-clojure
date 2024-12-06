@@ -1,7 +1,8 @@
 (ns advent.2023.d17.core-new
-  (:require [advent.2023.d17.priority-queue :refer [add-with-priority!
-                                                    extract-min! make-priority-queue!]]
-            [clojure.string :as str]))
+  (:require
+   [advent.2023.d17.priority-queue :refer [add-with-priority! extract-min!
+                                           make-priority-queue!]]
+   [advent.util :refer [str->2D-num]]))
 
 (def input (slurp "src/advent/2023/d17/input.txt"))
 
@@ -20,13 +21,6 @@
 4322674655533
 ")
 
-(defn str->2D
-  "Read a string containing new-lines into a 2 dimensional vector of characters"
-  [input]
-  (vec (for [line (str/split-lines input)]
-         (vec (for [c line]
-                (parse-long (str c)))))))
-
 (defn next-positions [the-map num-rows num-cols r c dist dir indir]
   (for [[new-dir [dr dc]] (map-indexed vector
                                        [[-1 0] [0 1] [1 0] [0 -1]])
@@ -40,7 +34,7 @@
     [(+ dist (get-in the-map [rr cc])) rr cc new-dir new-indir]))
 
 (defn answer1 [input next-positions]
-  (let [the-map (str->2D input)
+  (let [the-map (str->2D-num input)
         num-cols (count (first the-map))
         num-rows (count the-map)
         ;; Q (conj (PersistentQueue/EMPTY) [0 0 0 -1 0])

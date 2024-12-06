@@ -1,9 +1,12 @@
 (ns advent.2023.d17.core
-  (:require [advent.2023.d17.priority-queue :refer [add-with-priority!
-                                                    change-value! extract-min!
-                                                    make-priority-queue! queue->list]]
-            [clojure.string :as str])
-  (:import [clojure.lang PersistentQueue]))
+  (:require
+   [advent.2023.d17.priority-queue :refer [add-with-priority! change-value!
+                                           extract-min! make-priority-queue!
+                                           queue->list]]
+   [advent.util :refer [str->2D-num]]
+   [clojure.string :as str])
+  (:import
+   [clojure.lang PersistentQueue]))
 
 (def input (slurp "src/advent/2023/d17/input.txt"))
 
@@ -29,15 +32,7 @@
 ;; 131
 ;; 514")
 
-
-(defn str->2D
-  "Read a string containing new-lines into a 2 dimensional vector of characters"
-  [input]
-  (vec (for [line (str/split-lines input)]
-         (vec (for [c line]
-                (parse-long (str c)))))))
-
-(def the-map (str->2D input))
+(def the-map (str->2D-num input))
 
 (def num-cols (count (first the-map)))
 (def num-rows (count the-map))

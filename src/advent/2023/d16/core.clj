@@ -1,12 +1,6 @@
 (ns advent.2023.d16.core
-  (:require [clojure.string :as str]))
-
-(defn str->2D
-  "Read a string containing new-lines into a 2 dimensional vector of characters"
-  [input]
-  (vec (for [line (str/split-lines input)]
-         (vec (for [c line]
-                (str c))))))
+  (:require
+   [advent.util :refer [str->2D]]))
 
 (defn flip-directions [dir-r dir-c ch]
   (case ch

@@ -1,6 +1,6 @@
 (ns advent.2024.d6.core
   (:require
-   [clojure.string :as str]))
+   [advent.util :refer [str->2D]]))
 
 (comment
   (def input "....#.....
@@ -17,13 +17,6 @@
   )
 
 (def input (slurp "src/advent/2024/d6/input.txt"))
-
-(defn str->2D
-  "Read a string containing new-lines into a 2 dimensional vector of characters"
-  [input]
-  (vec (for [line (str/split-lines input)]
-         (vec (for [c line]
-                (str c))))))
 
 (def the-map (str->2D input))
 
