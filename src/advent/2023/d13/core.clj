@@ -1,7 +1,9 @@
 (ns advent.2023.d13.core
-  (:require [clojure.string :as str]
-            [clojure.test :refer [is]]
-            [clojure.set :as set]))
+  (:require
+   [advent.util :refer [transpose]]
+   [clojure.set :as set]
+   [clojure.string :as str]
+   [clojure.test :refer [is]]))
 
 (def input (slurp "src/advent/2023/d13/input.txt"))
 
@@ -20,9 +22,6 @@
 ;; #####.##.
 ;; ..##..###
 ;; #....#..#")
-
-(defn transpose [m]
-  (apply mapv vector m))
 
 (defn- parse-pattern [pattern]
   (for [line (str/split-lines pattern)]

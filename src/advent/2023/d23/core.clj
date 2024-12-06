@@ -1,6 +1,6 @@
 (ns advent.2023.d23.core
-  (:require [clojure.string :as str]
-            [clojure.pprint :as pprint]))
+  (:require
+   [advent.util :refer [str->2D]]))
 
 (def input "#.#####################
 #.......#########...###
@@ -33,14 +33,6 @@
 ;;    #....#
 ;;    #.####")
 
-(defn str->2D
-  "Read a string containing new-lines into a 2 dimensional vector of characters"
-  [input]
-  (vec (for [line (str/split-lines input)
-             :let [line (str/trim line)]]
-         (vec (for [c line]
-                (str c))))))
-
 (defn get-map
   "Returns [rows cols [sr sc] m] where m is list of tiles"
   [input]
@@ -54,6 +46,8 @@
         sc  (.indexOf (first m) ".")]
     [rows cols [0 sc] m]))
 
+
+(get-map input)
 ;; (let [[rows cols s m] (get-map input)]
 ;;   (loop [[r c] s
 ;;          seen #{s}

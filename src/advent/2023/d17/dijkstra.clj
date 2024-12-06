@@ -60,7 +60,10 @@
               (recur Q D))))
         D))))
 
-(defn neighbors [n]
+(defn neighbors
+  "Return the neighbors of a node.
+   The neighbors are a list of [distance neighbor] pairs."
+  [n]
   (case n
     "A" [[1 "B"] [3 "C"] [4 "E"]]
     "B" [[1 "A"] [4 "D"] [2 "E"]]
@@ -68,16 +71,34 @@
     "D" [[4 "B"] [2 "F"]]
     "E" [[4 "A"] [1 "F"] [2 "B"]]
     "F" [[1 "C"] [1 "E"] [2 "D"]]))
+(comment
 
-(dijkstra-shortest-distances "A" neighbors)
+  (dijkstra-shortest-distances "A" neighbors)
+  ;; {"A" 0, "B" 1, "C" 3, "E" 3, "F" 4, "D" 5}
 
-(defn shortest-path-from-to [start to]
+  (dijkstra-shortest-distances-path "A" neighbors)
+  ;; {"A" [0 nil], "B" [1 "A"], "C" [3 "A"], "E" [3 "B"], "F" [4 "E"], "D" [5 "B"]}
+
+  ;
+  )
+
+(defn shortest-path-from-to
+  "Return the shortest path from start to end.
+   The path is a vector of nodes.
+   The neighbors if a function mapping a node to its 
+   neighbors, which are a list of [distance neighbor] pairs."
+  [neighbors start to]
   (let [D (dijkstra-shortest-distances-path start neighbors)]
-    (loop [to to
-           path (list to)]
-      (if (= to start)
-        path
-        (let [to (second (get D to))]
-          (recur to (conj path to)))))))
+    (vec (loop [to to
+                path (list to)]
+           (if (= to start)
+             path
+             (let [to (second (get D to))]
+               (recur to (conj path to))))))))
 
-(shortest-path-from-to "A" "F")
+(comment
+  (shortest-path-from-to neighbors "A" "F")
+  ;; ["A" "B" "E" "F"]
+
+  ;
+  )

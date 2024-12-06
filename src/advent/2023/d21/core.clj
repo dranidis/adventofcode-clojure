@@ -1,6 +1,6 @@
 (ns advent.2023.d21.core
   (:require
-   [advent.2023.d23.core :refer [str->2D]]))
+   [advent.util :refer [str->2D]]))
 
 (def input "...........
 .....###.#.

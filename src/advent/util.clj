@@ -2,27 +2,30 @@
   (:require
    [clojure.string :as str]))
 
+(defn parse-lines-with-numbers [input]
+  (vec (for [line (str/split-lines input)]
+         (mapv parse-long (re-seq #"\d+" line)))))
+
+(comment
+  (parse-lines-with-numbers "1 2 3
+                             4 5 6
+                             7 8 9")
+  ;
+  )
+
 (defn str->2D
   "Read a string containing new-lines into a 2 dimensional vector of characters"
   [input]
   (vec (for [line (str/split-lines input)]
-         (vec (for [c line]
+         (vec (for [c (str/trim line)]
                 (str c))))))
 
-(def input "2413432311323
-3215453535623
-3255245654254
-3446585845452
-4546657867536
-1438598798454
-4457876987766
-3637877979653
-4654967986887
-4564679986453
-1224686865563
-2546548887735
-4322674655533
-")
+(comment
+  (str->2D "...#...
+            ..#.#..
+           .#...#.")
+  ;
+  )
 
 
 (defn str->2D-num
@@ -30,3 +33,20 @@
   [input]
   (mapv (fn [line] (mapv parse-long line))
         (str->2D input)))
+
+(comment
+  (str->2D-num "123
+               456
+               789")
+  ;
+  )
+
+(defn transpose [m]
+  (apply mapv vector m))
+
+(comment
+  (transpose [["1" "2" "3"]
+              ["4" "5" "6"]
+              ["7" "8" "9"]])
+  ;
+  )

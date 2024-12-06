@@ -1,5 +1,7 @@
 (ns advent.2023.d11.core
-  (:require [clojure.string :as str]))
+  (:require
+   [advent.util :refer [transpose]]
+   [clojure.string :as str]))
 
 (def example (slurp "src/advent/2023/d11/example.txt"))
 (def input (slurp "src/advent/2023/d11/input.txt"))
@@ -7,9 +9,6 @@
 (defn parse [input]
   (vec (for [line (str/split-lines input)]
          (vec line))))
-
-(defn transpose [m]
-  (apply mapv vector m))
 
 (defn expand-rows [map-rows]
   (let [num-rows (count (first map-rows))]

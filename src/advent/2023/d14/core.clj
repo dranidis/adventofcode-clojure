@@ -178,7 +178,7 @@ O.#..O.#.#
          (cycle-ref dim)
        ;
          ))
-  (asnwer-2 input 1000000)
+  (answer-2 input 1000000)
 
 
 ;; Rotate to west and tilt
