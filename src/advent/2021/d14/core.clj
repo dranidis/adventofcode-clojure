@@ -1,13 +1,12 @@
 (ns advent.2021.d14.core
   (:require
-   [advent.util :refer [in-vector?]]
    [clojure.string :as str]))
 
 ;; Solved with Side Effects
 (def map-atom (atom {}))
 
-;; (comment
-(def input "NNCB
+(comment
+  (def input "NNCB
 
 CH -> B
 HH -> N
@@ -26,7 +25,7 @@ BC -> B
 CC -> N
 CN -> C")
  ;
-  ;; )
+  )
 
 (def input (slurp "src/advent/2021/d14/input.txt"))
 
@@ -44,9 +43,9 @@ CN -> C")
 (def parsed (parse-parts input))
 (def template (first parsed))
 
-(defn inc-nil [v] (if (nil? v) (bigint 1) (inc v)))
+(defn inc-nil [v] (if (nil? v) 1 (inc v)))
 
-(defn reset-atom! []
+(defn reset-stats! []
   (reset! map-atom {})
   (reduce (fn [_ c] (swap! map-atom update c inc-nil)) nil (vec template)))
 
@@ -73,7 +72,7 @@ CN -> C")
       ;; all updates must be applied at once
       (reduce-kv
        (fn [acc k v]
-         (update acc k (fn [ov] (if (nil? ov) (bigint v) (+ ov v)))))
+         (update acc k (fn [ov] (if (nil? ov) v (+ ov v)))))
        template-pairs
        updates)
       (let [pair (first ks)
@@ -81,11 +80,11 @@ CN -> C")
             r (get rules-pairs pair)
             xr (str (first pair) r)
             ry (str r (last pair))
-            _ (swap! map-atom update (first (vec r)) (fn [v] (if (nil? v) (bigint times) (+ v times))))
+            _ (swap! map-atom update (first (vec r)) (fn [v] (if (nil? v) times (+ v times))))
             updates (-> updates
                         (update pair (fn [v] (if (nil? v) (- times) (- v times))))
-                        (update xr (fn [v] (if (nil? v) (bigint times) (+ v times))))
-                        (update ry (fn [v] (if (nil? v) (bigint times) (+ v times)))))]
+                        (update xr (fn [v] (if (nil? v) times (+ v times))))
+                        (update ry (fn [v] (if (nil? v) times (+ v times)))))]
         (recur (rest ks) updates)))))
 
 (defn tempate-pairs-after
@@ -97,14 +96,14 @@ CN -> C")
       (recur (inc times) (apply-rules-pairs rules-pairs template-pairs)))))
 
 ;; SIDE EFFECTS
-(reset-atom!)
+(reset-stats!)
 (tempate-pairs-after
  rules-pairs
  template-pairs 10)
 
 (println "Day 14 Answer 1:" (- (apply max (vals @map-atom)) (apply min (vals @map-atom))))
 
-(reset-atom!)
+(reset-stats!)
 (tempate-pairs-after
  rules-pairs
  template-pairs 40)
