@@ -19,12 +19,12 @@
   (mapv parse-long (str/split input #"")))
 
 (defn- make-file
-  [id size]
-  [:file id size])
+  [id size pos]
+  [:file id size pos])
 
 (defn- make-empty
-  [size]
-  [:empty size])
+  [size pos]
+  [:empty 0 size pos])
 
 (declare block-type)
 
@@ -40,63 +40,61 @@
 
 (defn- block-size
   [block]
-  (if (is-file? block)
-    (get block 2)
-    (get block 1)))
+  (get block 2))
 
 (defn- file-id
   [block]
-  (if (is-file? block)
-    (get block 1)
-    nil))
+  (get block 1))
+
+(defn- block-pos
+  [block]
+  (get block 3))
+
 
 ;; PART 1
 
+(for [i (range 5)]
+  [99 i])
+
 (def blocks
-  (vec (loop [parsed (parse input)
-              id 0
-              blocks []
-              toogle-file? true]
-         (if (empty? parsed)
-           blocks
-           (let [n (first parsed)
-                 block (repeat n (if toogle-file? id "."))
-                 newid (if toogle-file? (inc id) id)]
-             (recur (rest parsed) newid (concat blocks block) (not toogle-file?)))))))
+  (loop [parsed (parse input)
+         id 0
+         pos 0
+         blocks []
+         empties []
+         toogle-file? true]
+    (if (empty? parsed)
+      {:b (vec blocks) :e (vec empties)}
+      (let [n (first parsed)]
+        (if toogle-file?
+          (let [new-blocks (vec (for [i (range n)]
+                                  (make-file id 1 (+ pos i))))]
+            (recur (rest parsed) (inc id) (+ pos n)
+                   (concat blocks new-blocks) empties (not toogle-file?)))
+          (let [new-empties (vec (for [i (range n)]
+                                   (make-empty 1 (+ pos i))))]
+            (recur (rest parsed) id (+ pos n)
+                   blocks (concat empties new-empties) (not toogle-file?))))))))
 
-(when example? (is (= "00...111...2...333.44.5555.6666.777.888899"
-                      (apply str blocks))))
+(def new-blocks-e
+  (loop [empties (:e blocks)
+         bs (:b blocks)
+         moved []]
+    (if (empty? empties)
+      {:b (concat bs moved) :e empties}
+      (let [first-empty (first empties)
+            pos (block-pos first-empty)
+            last-block (peek bs)
+            bl-pos (block-pos last-block)
+            changed-block (make-file (file-id last-block) 1 pos)
+            new-blocks (pop bs)]
+        (if (> pos bl-pos)
+          {:b (concat bs moved) :e empties}
+          (recur (rest empties) new-blocks (conj moved changed-block)))))))
 
-(defn- remove-last
-  [blocks]
-  (loop [blocks blocks]
-    (if (empty? blocks)
-      [nil []]
-      (let [b (peek blocks)]
-        (if (= b ".")
-          (recur (pop blocks))
-          [b (pop blocks)])))))
+(def answer-1 (apply + (map (fn [f] (* (block-pos f) (file-id f))) (:b new-blocks-e))))
 
-(def new-blocks
-  (loop [blocks blocks
-         newblocks []]
-    (if (empty? blocks)
-      newblocks
-      (let [b (first blocks)]
-        (if (= b ".")
-          (let [[last-block rest-blocks] (remove-last (vec (rest blocks)))
-                new-blocks (if last-block
-                             (conj newblocks last-block)
-                             newblocks)]
-            (recur rest-blocks new-blocks))
-          (recur (vec (rest blocks)) (conj newblocks b)))))))
 
-(when example? (is (= "0099811188827773336446555566" (apply str new-blocks))))
-
-(def answer-1 (apply + (map (fn [[a b]] (* a b))
-                            (map-indexed vector
-                                         (vec (filter (fn [b] (not= b "."))
-                                                      new-blocks))))))
   ;; PART 2
 
 (def blocks-2
@@ -109,20 +107,8 @@
       (let [block-size (first parsed)
             rest-parsed (rest parsed)]
         (if toggle-file?
-          (recur rest-parsed (inc id) (conj blocks (make-file id block-size)) (not toggle-file?))
-          (recur rest-parsed id (conj blocks (make-empty block-size)) (not toggle-file?)))))))
-
-(defn- blocks-2->str
-  [blocks-2]
-  (apply str (map (fn [block]
-                    (if (is-file? block)
-                      (apply str (repeat (block-size block) (str (file-id block))))
-                      (apply str (repeat (block-size block) "."))))
-                  blocks-2)))
-
-(when (and example? (= part 2))
-  (is (= "00...111...2...333.44.5555.6666.777.888899"
-         (blocks-2->str blocks-2))))
+          (recur rest-parsed (inc id) (conj blocks (make-file id block-size nil)) (not toggle-file?))
+          (recur rest-parsed id (conj blocks (make-empty block-size nil)) (not toggle-file?)))))))
 
 (defn- fit-file-in-blocks
   [in-blocks file]
@@ -138,7 +124,7 @@
             (if (< (block-size block) file-block-size)
               (recur rest-blocks (conj new-blocks block))
               (vec (concat new-blocks
-                           [file (make-empty (- (block-size block) file-block-size))]
+                           [file (make-empty (- (block-size block) file-block-size) nil)]
                            (vec rest-blocks))))))))))
 
 (defn- replace-last-occurrence-with-empty-block
@@ -146,14 +132,9 @@
   (let [index (last (keep-indexed #(when (= %2 element) %1) v))]
     (if index
       (vec (concat (subvec v 0 index)
-                   (concat [(make-empty (block-size element))]
+                   (concat [(make-empty (block-size element) nil)]
                            (subvec v (inc index)))))
       v)))
-
-(when (and example? (= part 2))
-  (is (= "0099.111...2...333.44.5555.6666.777.8888.." (blocks-2->str (replace-last-occurrence-with-empty-block
-                                                                      (fit-file-in-blocks blocks-2 (last blocks-2))
-                                                                      (last blocks-2))))))
 
 (def new-blocks-2
   (loop [files (filterv is-file? blocks-2)
