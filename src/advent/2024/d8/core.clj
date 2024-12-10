@@ -70,3 +70,33 @@
 (defn -main [& _]
   (println "Day 1, Part 1:" answer-1)
   (println "Day 1, Part 2:" answer-2))
+
+;;
+;; Can also be solved with a SINGLE
+;; for comprehension
+;;
+(defn alt-answer
+  [from-times to-times]
+  (count (set (for [antenna (vec antenna-set)
+                    r1 (range rows)
+                    c1 (range cols)
+                    :when (= antenna (get-in grid [r1 c1]))
+                    r2 (range rows)
+                    c2 (range cols)
+                    :when (not= [r1 c1] [r2 c2])
+                    :when (= antenna (get-in grid [r2 c2]))
+                    n (range from-times to-times)
+                    :let [dr (- r2 r1)
+                          dc (- c2 c1)]
+                    a [[(+ r2 (* n dr)) (+ c2 (* n dc))]
+                       [(- r1 (* n dr)) (- c1 (* n dc))]]
+                    :when ((in-grid? rows cols) a)]
+                a))))
+
+(println "Alt: Day 8, Part 1:" (alt-answer 1 2))
+(println "Alt: Day 8, Part 2:" (alt-answer 0 50))
+
+
+
+
+
