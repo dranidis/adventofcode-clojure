@@ -1,5 +1,6 @@
 (ns advent.2024.d5.core
   (:require
+   [advent.util :refer [in-vector? middle-value-of-vector]]
    [clojure.string :as str]))
 
 (def input-example "47|53
@@ -33,12 +34,6 @@
 
 (def input (slurp "src/advent/2024/d5/input.txt"))
 
-(defn in-vector?
-  "true if coll contains elm"
-  [coll elm]
-  (and (vector? coll)
-       (some #(= elm %) coll)))
-
 (def order-section (first (str/split input #"\n\n")))
 (def reports-section (second (str/split input #"\n\n")))
 
@@ -64,11 +59,7 @@
   [report]
   (every? (fn [page] (page-correct? report page)) report))
 
-(defn middle-value [vect]
-  (when-not (empty? vect)
-    (vect (quot (count vect) 2))))
-
-(def answer-1 (apply + (map middle-value (filter correct-report? reports))))
+(def answer-1 (apply + (map middle-value-of-vector (filter correct-report? reports))))
 
 ;; Part 2
 
@@ -81,7 +72,7 @@
                    (not (in-vector? page-ordering [b a]))))
              incorrect-report)))
 
-(def answer-2 (apply + (map middle-value (map put-in-correct-order incorrect-reports))))
+(def answer-2 (apply + (map middle-value-of-vector (map put-in-correct-order incorrect-reports))))
 
 (defn -main [& _]
   (println "Day 1, Part 1:" answer-1)
