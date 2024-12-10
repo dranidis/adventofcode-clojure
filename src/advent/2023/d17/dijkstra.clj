@@ -24,7 +24,12 @@
 ;;                                        (if (< alt dist-v) alt dist-v))])))]
 ;;           (recur Q dist))))))
 
-(defn dijkstra-shortest-distances [start neighbors]
+(defn dijkstra-shortest-distances
+  "Return the shortest distances from start to all other nodes.
+   The neighbors if a function mapping a node to its 
+   neighbors, which are a list of [distance neighbor] pairs.
+   The result is a map from destination node to distance from the start."
+  [start neighbors]
   (let [Q (add-with-priority! (make-priority-queue!) [0 start])
         D {}]
     (loop [Q Q
