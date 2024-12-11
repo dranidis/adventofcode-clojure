@@ -59,5 +59,5 @@
       stones-map
       (recur (stones-map-change stones-map) (inc t)))))
 
-(println (apply + (vals (stones-map-after-times 25))))
-(println (apply + (vals (stones-map-after-times 75))))
+(println "Day 11, Answer 1" (apply + (vals (stones-map-after-times 25))))
+(println "Day 11, Answer 2" (apply + (vals (stones-map-after-times 75))))
