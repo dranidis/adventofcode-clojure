@@ -127,3 +127,19 @@
    :A :E)
   ;
   )
+
+(defn flood-fill
+  "Returns a set of points in the region.
+   next-fn is a function that returns the list of next points to visit
+   given a point [r c]."
+  [next-fn r c]
+  (set (loop [stack [[r c]]
+              visited #{[r c]}]
+         (if (empty? stack)
+           visited
+           (let [[r c] (first stack)
+                 next (next-fn r c)
+                 next (remove visited next)
+                 visited (into visited next)
+                 stack (concat (rest stack) next)]
+             (recur stack visited))))))

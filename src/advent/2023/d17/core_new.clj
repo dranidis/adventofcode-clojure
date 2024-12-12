@@ -43,7 +43,7 @@
     (loop [Q Q
            D D]
       ;; (println D)
-      (if (not (empty? Q))
+      (if-not (empty? Q)
         (let [[dist r c dir indir] (extract-min! Q)
               ;; Q (pop Q)
               ]
