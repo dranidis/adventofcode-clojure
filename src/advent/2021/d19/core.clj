@@ -25,40 +25,42 @@
 ;; 
 
 (def beacons (parse-parts input))
-(def scanners (count beacons))
+(def scanners-num (count beacons))
 
-(defn distance
+(defn euclidian-3d
   [[x1 y1 z1] [x2 y2 z2]]
   (+ (* (- x2 x1) (- x2 x1))
      (* (- y2 y1) (- y2 y1))
      (* (- z2 z1) (- z2 z1))))
 
-(def info (for [scanner1 (range scanners)
-                scanner2 (range scanners)
-                :when (> scanner1 scanner2)
+(def info (for [scanner1 (range scanners-num)
+                scanner2 (range scanners-num)
+                :when (< scanner1 scanner2)
                 :let [distances1 (set (for [b1 (beacons scanner1)
                                             b2 (beacons scanner1)
                                             :when (not= b1 b2)]
-                                        (distance b1 b2)))
+                                        (euclidian-3d b1 b2)))
                       distances2 (set (for [b1 (beacons scanner2)
                                             b2 (beacons scanner2)
                                             :when (not= b1 b2)]
-                                        (distance b1 b2)))
+                                        (euclidian-3d b1 b2)))
                       common-distances (set/intersection distances1 distances2)]
                 :let [cnt (count common-distances)]
                 :when (>= cnt 66)]
             {:scanner1 scanner1 :scanner2 scanner2
              :count cnt :beacon-dists common-distances}))
 
-(def pairs (let [s (second info)
+(clojure.pprint/pp)
+
+(def pairs (let [s (first info)
                  s1 (:scanner1 s)
                  s2 (:scanner2 s)]
              (for [s1b1 (beacons s1)
                    s1b2 (beacons s1)
                    s2b1 (beacons s2)
                    s2b2 (beacons s2)
-                   :let [d1 (distance s1b1 s1b2)
-                         d2 (distance s2b1 s2b2)]
+                   :let [d1 (euclidian-3d s1b1 s1b2)
+                         d2 (euclidian-3d s2b1 s2b2)]
                    :when (= d1 d2 (first (:beacon-dists s)))]
                [s1b1 s1b2 s2b1 s2b2])))
 
@@ -116,9 +118,6 @@
   [v1 v2]
   (zero-vector? (cross-product v1 v2)))
 
-
-
-
 (for [[s1b1 s1b2 s2b1 s2b2] (for [s [(first info)]
                                   bd (:beacon-dists s)
                                   :let [s1 (:scanner1 s)
@@ -127,8 +126,8 @@
                                   s1b2 (beacons s1)
                                   s2b1 (beacons s2)
                                   s2b2 (beacons s2)
-                                  :let [d1 (distance s1b1 s1b2)
-                                        d2 (distance s2b1 s2b2)]
+                                  :let [d1 (euclidian-3d s1b1 s1b2)
+                                        d2 (euclidian-3d s2b1 s2b2)]
                                   :when (= d1 d2 bd)]
                               [s1b1 s1b2 s2b1 s2b2])
       r rotations
@@ -139,7 +138,6 @@
 
 
 
-(clojure.pprint/pp)
 (comment
 
 
