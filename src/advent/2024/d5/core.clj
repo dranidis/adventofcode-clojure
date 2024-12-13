@@ -47,13 +47,12 @@
 (defn page-correct?
   [report page]
   ;; split report into 2 parts, one before the page and one after
-  (let [page-idx (.indexOf report page)]
-    (if (nil? page-idx)
-      false
-      (let [before-page (subvec report 0 page-idx)
-            after-page (subvec report (inc page-idx))]
-        (and (every? (fn [b] (in-vector? page-ordering [b page])) before-page)
-             (every? (fn [a] (in-vector? page-ordering [page a])) after-page))))))
+  (if-let [page-idx (.indexOf report page)]
+    (let [before-page (subvec report 0 page-idx)
+          after-page (subvec report (inc page-idx))]
+      (and (every? (fn [b] (in-vector? page-ordering [b page])) before-page)
+           (every? (fn [a] (in-vector? page-ordering [page a])) after-page)))
+    false))
 
 (defn correct-report?
   [report]
@@ -77,3 +76,5 @@
 (defn -main [& _]
   (println "Day 1, Part 1:" answer-1)
   (println "Day 1, Part 2:" answer-2))
+
+(-main)

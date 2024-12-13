@@ -1,6 +1,7 @@
 (ns advent.2024.d10.core
   (:require
-   [advent.util :refer [str->2D-num]]))
+   [advent.util :refer [str->2D-num]]
+   [clojure.string :as str]))
 
 (comment
   (def input
@@ -39,7 +40,7 @@
                  (get-in grid [nr nc]))]
     [nr nc]))
 
-(defn trail-nexts
+(defn expand-trails
   "Given a list of trails, return a list of trails that are one step further.
    It will return an empty list if there is no possible next step for any trail."
   [trails]
@@ -51,7 +52,7 @@
   "Given a starting point, return all possible trails."
   [start]
   (loop [trails [[start]]]
-    (let [next-trails (trail-nexts trails)]
+    (let [next-trails (expand-trails trails)]
       (if (empty? next-trails)
         trails
         (recur next-trails)))))
@@ -82,3 +83,34 @@
   (println "Day 9, Part 2:" answer-2))
 
 (-main)
+
+;; EVERYTHING in a single statement
+(let [grid (mapv (fn [line]
+                   (mapv #(parse-long (str %)) line))
+                 (str/split-lines input))
+
+      all-lists-of-trails
+      (map (fn [start]
+             (loop [trails [[start]]]
+               (let [expanded-trails
+                     (for [trail trails
+                           :let [[r c] (last trail)]
+                           next (for [[dr dc] [[-1 0] [1 0] [0 -1] [0 1]]
+                                      :let [nr (+ r dr)
+                                            nc (+ c dc)]
+                                      :when (some? (get-in grid [nr nc]))
+                                      :when (= (inc (get-in grid [r c]))
+                                               (get-in grid [nr nc]))]
+                                  [nr nc])]
+                       (conj trail next))]
+                 (if (empty? expanded-trails)
+                   trails
+                   (recur expanded-trails)))))
+           (for [r (range (count grid))
+                 c (range (count (first grid)))
+                 :when (zero? (get-in grid [r c]))]
+             [r c]))]
+  [(apply + (map (fn [list-of-trails]
+                   (count (set (map last list-of-trails))))
+                 all-lists-of-trails))
+   (apply + (map count all-lists-of-trails))])

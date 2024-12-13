@@ -34,7 +34,7 @@
         D {}]
     (loop [Q Q
            D D]
-      (if (not (empty? Q))
+      (if-not (empty? Q)
         (let [[dist node] (extract-min! Q)]
       ;;     (println "Current node" node "distance" dist "queue" Q)
       ;;     (println "Distances" D)
@@ -52,7 +52,7 @@
         D {}]
     (loop [Q Q
            D D]
-      (if (not (empty? Q))
+      (if-not (empty? Q)
         (let [[dist prev node] (extract-min! Q)]
       ;;     (println "Current node" node "distance" dist "queue" Q "prev" prev)
       ;;     (println "Distances" D)

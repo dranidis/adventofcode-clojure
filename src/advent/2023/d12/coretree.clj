@@ -113,7 +113,7 @@
 
 (defn count-leaves [tree]
   (cond
-    (not (vector? tree)) (if (not (nil? tree)) 1 0)
+    (not (vector? tree)) (if-not (nil? tree) 1 0)
     :else (+ (count-leaves (second tree)) (count-leaves (nth tree 2)))))
 
 

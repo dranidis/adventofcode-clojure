@@ -43,18 +43,16 @@ CN -> C")
 (def parsed (parse-parts input))
 (def template (first parsed))
 
-(defn inc-nil [v] (if (nil? v) 1 (inc v)))
-
 (defn reset-stats! []
   (reset! map-atom {})
-  (reduce (fn [_ c] (swap! map-atom update c inc-nil)) nil (vec template)))
+  (reduce (fn [_ c] (swap! map-atom update c (fnil inc 0))) nil (vec template)))
 
 (def rules (second parsed))
 
 (def template-pairs
   (let [partitioned (partition 2 1 template)]
     (reduce (fn [acc [c1 c2]]
-              (update acc (str c1 c2) inc-nil))
+              (update acc (str c1 c2) (fnil inc 0)))
             {}
             partitioned)))
 
@@ -72,7 +70,7 @@ CN -> C")
       ;; all updates must be applied at once
       (reduce-kv
        (fn [acc k v]
-         (update acc k (fn [ov] (if (nil? ov) v (+ ov v)))))
+         (update acc k (fnil #(+ % v) 0)))
        template-pairs
        updates)
       (let [pair (first ks)
@@ -80,11 +78,11 @@ CN -> C")
             r (get rules-pairs pair)
             xr (str (first pair) r)
             ry (str r (last pair))
-            _ (swap! map-atom update (first (vec r)) (fn [v] (if (nil? v) times (+ v times))))
+            _ (swap! map-atom update (first (vec r)) (fnil #(+ % times) 0))
             updates (-> updates
-                        (update pair (fn [v] (if (nil? v) (- times) (- v times))))
-                        (update xr (fn [v] (if (nil? v) times (+ v times))))
-                        (update ry (fn [v] (if (nil? v) times (+ v times)))))]
+                        (update pair (fnil #(- % times) 0))
+                        (update xr (fnil #(+ % times) 0))
+                        (update ry (fnil #(+ % times) 0)))]
         (recur (rest ks) updates)))))
 
 (defn tempate-pairs-after
