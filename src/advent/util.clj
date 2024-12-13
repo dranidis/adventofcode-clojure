@@ -2,9 +2,19 @@
   (:require
    [clojure.string :as str]))
 
+(defn str->nums [s]
+  (mapv parse-long (re-seq #"-?\d+" s)))
+
+(comment
+  (str->nums "1 2 -3")
+  (str->nums "1 2 --3")
+  (str->nums "a1a2 2 --3")
+  ;
+  )
+
 (defn parse-lines-with-numbers [input]
   (vec (for [line (str/split-lines input)]
-         (mapv parse-long (re-seq #"\d+" line)))))
+         (str->nums line))))
 
 (comment
   (parse-lines-with-numbers "1 2 3

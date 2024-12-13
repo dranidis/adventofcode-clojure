@@ -112,5 +112,5 @@
 (println answer-2)
 
 (defn- -main [& _]
-  (println "Day 9, Part 1:" answer-1)
-  (println "Day 9, Part 2:" answer-2))
+  (println "Day 12, Part 1:" answer-1)
+  (println "Day 12, Part 2:" answer-2))

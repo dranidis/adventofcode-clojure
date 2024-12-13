@@ -1,15 +1,17 @@
 (ns advent.2024.d13.core
-  (:require [clojure.string :as str]))
+  (:require
+   [advent.util :refer [str->nums]]
+   [clojure.string :as str]))
 
 (def input (slurp "src/advent/2024/d13/input.txt"))
 
 ;; SECTIONS
 (defn parse-section
   [section]
-  (let [[A B P] (str/split-lines section)]
-    {:A (mapv parse-long (re-seq #"\d+" A))
-     :B (mapv parse-long (re-seq #"\d+" B))
-     :prize (mapv parse-long (re-seq #"\d+" P))}))
+  (let [[a b p] (str/split-lines section)]
+    {:A (str->nums a)
+     :B (str->nums b)
+     :prize (str->nums p)}))
 
 (defn parse-sections [input]
   (map parse-section (str/split input #"\n\n")))
@@ -25,6 +27,8 @@
       (* timesB (get-in claw [:B 1])))
    (+ (* timesA 3) (* timesB 1))])
 
+;; brute force solution
+;; works only for part 1
 (defn win-claw [claw]
   (first (for [timesA (range 101)
                timesB (range 101)
@@ -56,10 +60,10 @@
       (throw (ex-info "Transformation matrix is singular and cannot be inverted." {}))
       (let [inv-det (/ 1.0 det) ;; Inverse of the determinant
             inv-matrix [[(* inv-det vy2) (* inv-det (- vy1))]
-                        [(* inv-det (- vx2)) (* inv-det vx1)]]]
-        (let [[[a b] [c d]] inv-matrix]
-          [(+ (* px a) (* py b))
-           (+ (* px c) (* py d))])))))
+                        [(* inv-det (- vx2)) (* inv-det vx1)]]
+            [[a b] [c d]] inv-matrix]
+        [(+ (* px a) (* py b))
+         (+ (* px c) (* py d))]))))
 
 (defn close-to-integer?
   "Checks if a number n is close to an integer within a given threshold (default 1e-9)."
@@ -85,8 +89,8 @@
                              (mapv win-claw-2 claws)))))
 
 (defn- -main [& _]
-  (println "Day 12, Part 1:" (answer claws))
-  (println "Day 12, Part 2:" (answer claws-2)))
+  (println "Day 13, Part 1:" (answer claws))
+  (println "Day 13, Part 2:" (answer claws-2)))
 
 (-main)
 
