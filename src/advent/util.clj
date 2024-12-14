@@ -156,3 +156,9 @@
                  visited (into visited next)
                  stack (concat (rest stack) next)]
              (recur stack visited))))))
+
+
+(defn parse-binary
+  "Parse a string as a binary number."
+  [binary-str]
+  (Integer/parseInt binary-str 2))

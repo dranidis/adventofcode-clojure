@@ -1,6 +1,6 @@
 (ns advent.2021.d20.core
   (:require
-   [advent.util :refer [draw-grid str->2D]]
+   [advent.util :refer [parse-binary str->2D]]
    [clojure.string :as str]))
 
 (def input
@@ -17,11 +17,6 @@
 (def image-enhancement-section (first (str/split input #"\n\n")))
 (def image-section (second (str/split input #"\n\n")))
 (def algorithm (str/split image-enhancement-section #""))
-
-(defn parse-binary
-  "Parse a string as a binary number."
-  [binary-str]
-  (Integer/parseInt binary-str 2))
 
 (defn grid9x9->bin->enhanced
   [grid r c background]
