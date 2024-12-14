@@ -16,6 +16,10 @@
   (vec (for [line (str/split-lines input)]
          (str->nums line))))
 
+(defn parse-lines-with-parser [parser input]
+  (vec (for [line (str/split-lines input)]
+         (parser line))))
+
 (comment
   (parse-lines-with-numbers "1 2 3
                              4 5 6
@@ -156,3 +160,9 @@
                  visited (into visited next)
                  stack (concat (rest stack) next)]
              (recur stack visited))))))
+
+
+(defn parse-binary
+  "Parse a string as a binary number."
+  [binary-str]
+  (Integer/parseInt binary-str 2))
