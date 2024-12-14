@@ -26,25 +26,15 @@ p=9,5 v=-3,-3")
 
 (def robots (parse-lines-with-numbers input))
 
-(defn move
-  [[x y dx dy]]
-  (let [newx (+ x dx)
-        newy (+ y dy)
+(defn- move
+  [times [x y dx dy]]
+  (let [newx (+ x (* times dx))
+        newy (+ y (* times dy))
         newx (if (or (< newx 0) (>= newx max-x))
                (mod newx max-x) newx)
         newy (if (or (< newy 0) (>= newy max-y))
                (mod newy max-y) newy)]
     [newx newy dx dy]))
-
-(comment
-  ;; only for example
-  (= [4 1 2 -3] (move [2 4 2 -3]))
-  (= [6 5 2 -3] (move (move [2 4 2 -3])))
-  (= [8 2 2 -3] (move (move (move [2 4 2 -3]))))
-  (= [10 6 2 -3] (move (move (move (move [2 4 2 -3])))))
-  (= [1 3 2 -3] (move (move (move (move (move [2 4 2 -3]))))))
-  ;
-  )
 
 (defn grid
   [robots]
@@ -61,22 +51,13 @@ p=9,5 v=-3,-3")
           (recur (inc x) y (conj row (if (r-set [x y])
                                        "#"
                                        ".")) grid))))))
-
-(def robots-after-100
-  (loop [robots robots
-         time 0]
-    (if (= time 100)
-      robots
-      (recur (mapv move robots)
-             (inc time)))))
-
 (def answer-1
   (apply * (for [opx [< >]
                  opy [< >]]
              (count (filter (fn [[x y _ _]]
                               (and (opx x (quot max-x 2))
                                    (opy y (quot max-y 2))))
-                            robots-after-100)))))
+                            (mapv (partial move 100) robots))))))
 
 ;; PART 2
 
@@ -136,13 +117,13 @@ p=9,5 v=-3,-3")
                     found-at-time)
                   (let [v (variance-robots robots)]
                     (if (> v max-variance)
-                      (recur (mapv move robots)
+                      (recur (mapv (partial move 1) robots)
                              (inc totaltime)
                              0
                              v
                              robots
                              totaltime)
-                      (recur (mapv move robots)
+                      (recur (mapv (partial move 1) robots)
                              (inc totaltime)
                              (inc time-from-previous-increased-variance)
                              max-variance
