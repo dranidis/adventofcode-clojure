@@ -30,10 +30,12 @@
           (case instruction
             "do()" (recur (rest instructions) acc true)
             "don't()" (recur (rest instructions) acc false)
-            (if enabled
-              (recur (rest instructions) (+ acc (perform-multiplication instruction)) enabled)
-              (recur (rest instructions) acc enabled))))))))
+            (recur (rest instructions)
+                   (if enabled
+                     (+ acc (perform-multiplication instruction))
+                     acc) enabled)))))))
 
 (defn -main [& _]
   (println "Day 1, Part 1:" (answer-1 input))
   (println "Day 1, Part 2:" (answer-2 input)))
+

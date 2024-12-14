@@ -16,6 +16,10 @@
   (vec (for [line (str/split-lines input)]
          (str->nums line))))
 
+(defn parse-lines-with-parser [parser input]
+  (vec (for [line (str/split-lines input)]
+         (parser line))))
+
 (comment
   (parse-lines-with-numbers "1 2 3
                              4 5 6
