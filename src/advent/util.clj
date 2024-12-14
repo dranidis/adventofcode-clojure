@@ -61,6 +61,9 @@
   ;
   )
 
+(defn rows-cols [grid]
+  [(count grid) (count (first grid))])
+
 (defn in-grid?
   "Returns a function that checks if a point is INSIDE a grid
    with the given number of rows and columns"
