@@ -2,6 +2,10 @@
   (:require
    [clojure.string :as str]))
 
+(defn third
+  [l]
+  (nth l 2))
+
 (defn str->nums [s]
   (mapv parse-long (re-seq #"-?\d+" s)))
 
@@ -80,10 +84,21 @@
   "Draws a grid to the console.
    The grid is a 2D array of strings."
   [grid]
-  (doseq [row grid]
-    (doseq [cell row]
-      (print cell))
-    (println)))
+
+  (let [n (atom 0)
+        rows (count grid)
+        cols (count (first grid))]
+    ;; print a line with the numbers 0123456...
+    (print "   ")
+    (doseq [c (range cols)]
+      (print (mod c 10)))
+    (println)
+    (doseq [row grid]
+      (do (print (mod @n 10) " ")
+          (swap! n inc))
+      (doseq [cell row]
+        (print cell))
+      (println))))
 
 (defn draw-grid-from-points
   "Draws a grid to the console.
@@ -95,6 +110,31 @@
     (doseq [[r c] points]
       (aset grid r c "#"))
     (draw-grid grid)))
+
+(defn grid-2d
+  "Creates a two dimemsional grid of strings with the given number of rows and columns.
+   The grid is initialized with the symbol everywhere.
+   Other sets of points with their symbols can be added later
+   with the set-grid function."
+  [rows cols symbol]
+  (to-array-2d (vec (repeat rows (vec (repeat cols symbol))))))
+
+(defn set-grid
+  "Sets the symbols in the grid at the given points."
+  [grid points symbol]
+  (doseq [[r c] points]
+    (aset grid r c symbol))
+  grid)
+
+(comment
+
+  (-> (grid-2d 3 3 ".")
+      (set-grid [[0 1] [1 2] [2 0]] "O")
+      (draw-grid))
+  identical?
+  defmulti
+  ;
+  )
 
 
 (defn middle-value-of-vector [vect]
