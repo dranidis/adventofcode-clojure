@@ -191,4 +191,3 @@
   (println "Running floodfill... wait for about 15200 iterations (~500 secs)")
   (println "RESULT from floodfill" (answer-2 the-path)))
 
-(-main)

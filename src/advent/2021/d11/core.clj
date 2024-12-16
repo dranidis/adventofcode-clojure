@@ -1,6 +1,6 @@
 (ns advent.2021.d11.core
   (:require
-   [advent.util :refer [str->2D-num]]))
+   [advent.util :refer [coords-of-pred str->2D-num]]))
 
 (comment
   (def input "")
@@ -15,10 +15,7 @@
 
 (defn get-flashing
   [grid]
-  (for [r (range rows)
-        c (range cols)
-        :when (> (get-in grid [r c]) 9)]
-    [r c]))
+  (coords-of-pred grid #(> % 9)))
 
 (defn energy-increase
   [grid [row col]]
