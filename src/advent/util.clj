@@ -1,6 +1,7 @@
 (ns advent.util
   (:require
-   [clojure.string :as str]))
+   [clojure.string :as str]
+   [clojure.term.colors :as colors]))
 
 (defn third
   [l]
@@ -59,6 +60,40 @@
   ;
   )
 
+
+(defn coords-of-symbol
+  [grid symbol]
+  (let [rows (count grid)
+        cols (count (first grid))]
+    (for [r (range rows)
+          c (range cols)
+          :when (= (get-in grid [r c]) symbol)]
+      [r c])))
+
+(defn coords-of-pred
+  [grid pred]
+  (let [rows (count grid)
+        cols (count (first grid))]
+    (for [r (range rows)
+          c (range cols)
+          :when (pred (get-in grid [r c]))]
+      [r c])))
+
+(comment
+  (def grid (str->2D "...#...
+                        ..#.#..
+                       .#...#."))
+
+  (coords-of-symbol grid "#")
+  ;; ([0 3] [1 2] [1 4] [2 1] [2 5])
+
+  (coords-of-pred grid #(= % "#"))
+  ;; ([0 3] [1 2] [1 4] [2 1] [2 5])
+
+  ;
+  )
+
+
 (defn transpose [m]
   (apply mapv vector m))
 
@@ -68,9 +103,6 @@
               ["7" "8" "9"]])
   ;
   )
-
-(defn rows-cols [grid]
-  [(count grid) (count (first grid))])
 
 (defn in-grid?
   "Returns a function that checks if a point is INSIDE a grid
@@ -89,13 +121,20 @@
         rows (count grid)
         cols (count (first grid))]
     ;; print a line with the numbers 0123456...
-    (print "   ")
+    (print "    ")
+    (doseq [c (range cols)]
+      (let [q (quot c 10)]
+        (print (if (zero? q) " " q))))
+    (println)
+    (print "    ")
     (doseq [c (range cols)]
       (print (mod c 10)))
     (println)
     (doseq [row grid]
-      (do (print (mod @n 10) " ")
-          (swap! n inc))
+      (let [q (quot @n 10)
+            left-digits (str (if (zero? q) " " q) (mod @n 10))]
+        (do (print left-digits " ")
+            (swap! n inc)))
       (doseq [cell row]
         (print cell))
       (println))))
@@ -115,7 +154,18 @@
   "Creates a two dimemsional grid of strings with the given number of rows and columns.
    The grid is initialized with the symbol everywhere.
    Other sets of points with their symbols can be added later
-   with the set-grid function."
+   with the set-grid function.
+   
+   ## Example:
+   ```
+   
+  (-> (grid-2d 25 25 \\.)
+      (set-grid [[1 1] [1 2] [2 0] [9 9]] \\O)
+      (set-grid [[5 5] [4 6 ] [4 7] [4 9]] \\#)
+      (draw-grid))
+   ```
+
+   "
   [rows cols symbol]
   (to-array-2d (vec (repeat rows (vec (repeat cols symbol))))))
 
@@ -128,11 +178,16 @@
 
 (comment
 
-  (-> (grid-2d 3 3 ".")
-      (set-grid [[0 1] [1 2] [2 0]] "O")
+  (-> (grid-2d 25 25 ".")
+      (set-grid [[1 1] [1 2] [2 0] [9 9]] (colors/on-red "O"))
       (draw-grid))
-  identical?
-  defmulti
+
+
+  (-> (grid-2d 25 25 \.)
+      (set-grid [[1 1] [1 2] [2 0] [9 9]] \O)
+      (set-grid [[5 5] [4 6] [4 7] [4 9]] \#)
+
+      (draw-grid))
   ;
   )
 
