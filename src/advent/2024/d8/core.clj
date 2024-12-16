@@ -1,6 +1,6 @@
 (ns advent.2024.d8.core
   (:require
-   [advent.util :refer [in-grid? str->2D]]))
+   [advent.util :refer [coords-of-pred in-grid? str->2D]]))
 
 (comment
   (def input "............
@@ -29,10 +29,7 @@
 (defn antenna-locations
   "Find the locations of a given antenna in the grid."
   [antenna]
-  (for [r (range rows)
-        c (range cols)
-        :when (= (get-in grid [r c]) antenna)]
-    [r c]))
+  (coords-of-pred grid #(= % antenna)))
 
 (defn pair-antinodes
   "Generate antinodes between two antenna locations."

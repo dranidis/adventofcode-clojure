@@ -1,7 +1,8 @@
 (ns advent.2024.d15.core2
   (:require
-   [advent.util :refer [draw-grid grid-2d set-grid str->2D]]
-   [clojure.string :as str]))
+   [advent.util :refer [coords-of-symbol draw-grid grid-2d set-grid str->2D]]
+   [clojure.string :as str]
+   [clojure.term.colors :as colors]))
 
 (def example? false)
 
@@ -25,38 +26,34 @@
 (def moves (str/split (str/join (str/split-lines move-section)) #""))
 ;; (count moves)
 
-(def robot (first (for [r (range rows)
-                        c (range cols)
-                        :when (= (get-in grid [r c]) "@")]
-                    [r (* 2 c)])))
+(def robot (first (map (fn [[r c]] [r (* 2 c)])
+                       (coords-of-symbol grid "@"))))
 
-(def boxes (set (for [r (range rows)
-                      c (range cols)
-                      :when (= (get-in grid [r c]) "O")
-                      box [{:a [r (* 2 c)] :b [r (inc (* 2 c))]}]]
-                  box)))
+(def boxes (set (map (fn [[r c]]
+                       {:a [r (* 2 c)] :b [r (inc (* 2 c))]})
+                     (coords-of-symbol grid "O"))))
 
-(def walls (set (for [r (range rows)
-                      c (range cols)
-                      :when (= (get-in grid [r c]) "#")
-                      wall [[r (* 2 c)] [r (inc (* 2 c))]]]
-                  wall)))
+(def walls (set (mapcat (fn [[r c]] [[r (* 2 c)] [r (inc (* 2 c))]])
+                        (coords-of-symbol grid "#"))))
 
 (comment
   ;; You can use the following functions to draw the grid
 
-  (defn- draw-all
-    [walls boxes robot]
-    (let [boxes (vec (reduce (fn [acc b] (concat acc [(:a b) (:b b)])) [] boxes))]
-      (-> (grid-2d rows (* 2 cols) ".")
-          (set-grid walls "#")
-          (set-grid boxes "x")
-          (set-grid [robot] "@")
-          (draw-grid))))
 
-  (draw-all walls boxes robot)
   ;
   )
+
+
+(defn- draw-all
+  [walls boxes robot]
+  (let [boxes (vec (reduce (fn [acc b] (concat acc [(:a b) (:b b)])) [] boxes))]
+    (-> (grid-2d rows (* 2 cols) ".")
+        (set-grid walls (colors/white "#"))
+        (set-grid boxes (colors/green "x"))
+        (set-grid [robot] (colors/red (colors/blink "@")))
+        (draw-grid))))
+
+(draw-all walls boxes robot)
 
 
 (defn- box-hits-walls?

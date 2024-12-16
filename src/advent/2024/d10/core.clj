@@ -1,6 +1,6 @@
 (ns advent.2024.d10.core
   (:require
-   [advent.util :refer [str->2D-num]]
+   [advent.util :refer [coords-of-pred str->2D-num]]
    [clojure.string :as str]))
 
 (comment
@@ -19,13 +19,8 @@
 (def input (slurp "src/advent/2024/d10/input.txt"))
 
 (def grid (str->2D-num input))
-(def rows (count grid))
-(def cols (count (first grid)))
 
-(def starts (for [r (range rows)
-                  c (range cols)
-                  :when (zero? (get-in grid [r c]))]
-              [r c]))
+(def starts (coords-of-pred grid zero?))
 
 (defn next-positions
   "All possible next positions that are adjacent and 

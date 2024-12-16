@@ -1,7 +1,7 @@
 (ns advent.2024.d15.core
   (:require
    [advent.2024.d15.core2 :refer [answer-2]]
-   [advent.util :refer [str->2D]]
+   [advent.util :refer [coords-of-symbol str->2D]]
    [clojure.string :as str]))
 
 (def example? false)
@@ -26,28 +26,14 @@
 
 ;; GRID
 (def grid (str->2D map-section))
-(def rows (count grid))
-(def cols (count (first grid)))
 
 ;; MOVES
-
 (def moves (str/split (str/join (str/split-lines move-section)) #""))
 ;; (count moves)
 
-(def robot (first (for [r (range rows)
-                        c (range cols)
-                        :when (= (get-in grid [r c]) "@")]
-                    [r c])))
-
-(def boxes (set (for [r (range rows)
-                      c (range cols)
-                      :when (= (get-in grid [r c]) "O")]
-                  [r c])))
-
-(def walls (set (for [r (range rows)
-                      c (range cols)
-                      :when (= (get-in grid [r c]) "#")]
-                  [r c])))
+(def robot (first (coords-of-symbol grid "@")))
+(def boxes (set (coords-of-symbol grid "O")))
+(def walls (set (coords-of-symbol grid "#")))
 
 (defn- move-box [move box boxes]
   (let [[nr nc] box

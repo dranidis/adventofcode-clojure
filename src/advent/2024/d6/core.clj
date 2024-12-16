@@ -1,6 +1,6 @@
 (ns advent.2024.d6.core
   (:require
-   [advent.util :refer [str->2D]]))
+   [advent.util :refer [coords-of-symbol str->2D]]))
 
 (comment
   (def input "....#.....
@@ -20,13 +20,7 @@
 
 (def the-map (str->2D input))
 
-(def guard-pos (first
-                (let [rows (count the-map)
-                      cols (count (first the-map))]
-                  (for [r (range rows)
-                        c (range cols)
-                        :when (= (get-in the-map [r c]) "^")]
-                    [r c]))))
+(def guard-pos (first (coords-of-symbol the-map "^")))
 
 (defn change-dir
   [dir]

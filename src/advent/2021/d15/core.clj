@@ -1,6 +1,6 @@
 (ns advent.2021.d15.core
   (:require
-   [advent.2023.d17.dijkstra :refer [dijkstra-shortest-distances]]
+   [advent.dijkstra :refer [dijkstra-shortest-distances]]
    [advent.util :refer [str->2D-num]]))
 
 (comment

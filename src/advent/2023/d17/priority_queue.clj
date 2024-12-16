@@ -34,9 +34,6 @@
   (.remove queue old-v)
   (.add queue v))
 
-;; (defn queue->list [queue]
-;;   (map (fn [[x1 x2 _]] [x1 x2]) (.toArray queue)))
-
 (comment
 
   (def q (make-priority-queue!
@@ -57,6 +54,14 @@
   (add-with-priority! q 5)
   (add-with-priority! q 3)
   (extract-min! q)
+
+  (def q (make-priority-queue!))
+  (add-with-priority! q [2 :a])
+  (add-with-priority! q [2 :b])
+
+  (extract-min! q)
+
+  (add-with-priority! (make-priority-queue!) [0 nil start])
 
   ;
   )
