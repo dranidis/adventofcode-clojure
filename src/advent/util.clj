@@ -256,6 +256,9 @@
                  stack (concat (rest stack) next)]
              (recur stack visited))))))
 
+(defn flood-fill-rc
+  [next-fn [r c]]
+  (flood-fill next-fn r c))
 
 (defn parse-binary
   "Parse a string as a binary number."
