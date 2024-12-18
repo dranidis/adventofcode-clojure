@@ -2,10 +2,10 @@
   (:require
    [advent.util :refer [str->nums]]
    [clojure.math :refer [pow]]
-   [clojure.pprint :as pp]
    [clojure.string :as str]))
 
 (def example? false)
+(def part2? true)
 
 (def example "Register A: 729
 Register B: 0
@@ -13,7 +13,13 @@ Register C: 0
 
 Program: 0,1,5,4,3,0")
 
-(def input (if example? example (slurp "src/advent/2024/d17/input.txt")))
+(def example2 "Register A: 2024
+Register B: 0
+Register C: 0
+
+Program: 0,3,5,4,3,0")
+
+(def input (if example? (if part2? example2 example) (slurp "src/advent/2024/d17/input.txt")))
 
 ;; SECTIONS
 (def reg-section (first (str/split input #"\n\n")))
@@ -29,10 +35,6 @@ Program: 0,1,5,4,3,0")
          :program program
          :output ""))
 
-;; (init-program registers program)
-
-;; (quot 117440 8)
-
 (defn combo-operand-value
   [registers operand]
   (cond
@@ -47,59 +49,23 @@ Program: 0,1,5,4,3,0")
       (assoc registers :pointer nil) ;; end of program
       (assoc registers :pointer new-pointer))))
 
-(defn- adv [registers operand]
-  (let [numerator (registers :A)
-        denominator (long (pow 2 (combo-operand-value registers operand)))
-        result (quot numerator denominator)]
-    (-> registers
-        (assoc :A result)
-        (update-pointer))))
-
-(defn- bdv [registers operand]
-  (let [numerator (registers :A)
-        denominator (long (pow 2 (combo-operand-value registers operand)))
-        result (quot numerator denominator)]
-    (-> registers
-        (assoc :B result)
-        (update-pointer))))
-
-(defn- cdv [registers operand]
-  (let [numerator (registers :A)
-        denominator (long (pow 2 (combo-operand-value registers operand)))
-        result (quot numerator denominator)]
-    (-> registers
-        (assoc :C result)
-        (update-pointer))))
-
-(defn- bit-XOR [registers operand]
-  (let [b (registers :B)
-        result (bit-xor b operand)]
-    (update-pointer (assoc registers :B result))))
-
-(defn- bst [registers operand]
-  (update-pointer
-   (assoc registers :B (mod (combo-operand-value registers operand) 8))))
+(defn- dv [registers operand to]
+  (assoc registers to (quot (registers :A)
+                            (long (pow 2
+                                       (combo-operand-value registers operand))))))
 
 (defn- jnz [registers operand]
   (if (zero? (registers :A))
     (update-pointer registers)
     (assoc registers :pointer operand)))
 
-(defn- bxc [registers _]
-  (let [b (registers :B)
-        c (registers :C)
-        result (bit-xor b c)]
-    (update-pointer (assoc registers :B result))))
-
 (defn- out [registers operand]
   (let [result (mod (combo-operand-value registers operand) 8)
         previous-output (registers :output)]
-    (update-pointer (assoc registers :output
-                           (if (= previous-output "")
-                             (str result)
-                             (str previous-output "," result))))))
-
-
+    (assoc registers :output
+           (if (= previous-output "")
+             (str result)
+             (str previous-output "," result)))))
 
 ;; Actual Program: 
 ;; 2,4, bst
@@ -113,16 +79,17 @@ Program: 0,1,5,4,3,0")
 
 (defn execute
   [registers op operand]
-  (case op
-    0 (adv registers operand)
-    1 (bit-XOR registers operand)
-    2 (bst registers operand)
-    3 (jnz registers operand)
-    4 (bxc registers operand)
-    5 (out registers operand)
-    6 (bdv registers operand)
-    7 (cdv registers operand)
-    "default"))
+  (-> (case op
+        0 (dv registers operand :A)
+        1 (assoc registers :B (bit-xor (registers :B) operand))
+        2 (assoc registers :B (mod (combo-operand-value registers operand) 8))
+        3 (jnz registers operand)
+        4 (assoc registers :B (bit-xor (registers :B) (registers :C)))
+        5 (out registers operand)
+        6 (dv registers operand :B)
+        7 (dv registers operand :C)
+        "default")
+      ((fn [r] (if-not (= op 3) (update-pointer r) r)))))
 
 (defn execute-program
   [registers program]
@@ -134,46 +101,48 @@ Program: 0,1,5,4,3,0")
                       (nth (registers :program) (registers :pointer))
                       (nth (registers :program) (+ 1 (registers :pointer))))))))
 
-(defn execute-program-interrupt
-  [registers program]
-  (loop [registers-all (init-program registers program)]
-    ;; (pp/pprint registers-all)
-    (let [out (vec (remove nil?
-                           (mapv parse-long (str/split (registers-all :output) #","))))]
-      ;; (println "out" out)
-      (if (or (nil? (registers-all :pointer))
-              (not= out (vec (take (count out) program))))
-        (registers-all :output)
-        (recur (execute registers-all
-                        (nth (registers-all :program) (registers-all :pointer))
-                        (nth (registers-all :program) (+ 1 (registers-all :pointer)))))))))
-
 (def answer-1 (execute-program registers program))
 
-(defn mutate-program
-  [registers program]
-  (loop [n 8]
-    (when (zero? (mod n 1000))
-      (println n))
-    (let [registers (assoc registers :A n)
-          out (execute-program-interrupt registers program)]
-      ;; (println n out)
-      (if (= program
-             (mapv parse-long (str/split out #",")))
-        n
-        (recur (* 2 n))))))
+;; PART 2
 
-(def answer-2 (mutate-program {:A 2024 :B 0 :C 0} [0,3,5,4,3,0])) ;; WORKS!!! 117440
-;; (def ex (execute-program {:A 117440 :B 0 :C 0} [0,3,5,4,3,0])) ;; WORKS!!! 117440
+(def int-to-3-digits-bin
+  (fn [n]
+    (let [s (Integer/toString n 2)]
+      (str (apply str (repeat (- 3 (count s)) "0")) s))))
 
+(def A-bin-string-iter
+  (loop [A-bin-strings [{:A "" :d 1}]
+         numbers []]
+    (if (empty? A-bin-strings)
+      numbers
+      (let [A-bin-string-rec (peek A-bin-strings)
+            A-bin-string (:A A-bin-string-rec)
+            take-program-digits-from-the-end (:d A-bin-string-rec)]
+        (if (= (inc (count program)) take-program-digits-from-the-end)
+          (recur (pop A-bin-strings) (conj numbers A-bin-string))
+          (let [results-3 (->> (map (fn [i]
+                                      (let [s (str A-bin-string
+                                                   (int-to-3-digits-bin i))]
+                                        (Long/parseLong s 2)))
+                                    (range 8))
+                               (map #(execute-program {:A % :B 0 :C 0} program))
+                               (map (fn [s] (read-string (str "[" s "]")))))
+                last-program (drop (- (count program) take-program-digits-from-the-end) program)
+                results-filtered (filter (fn [[i v]]
+                                           (= v last-program))
+                                         (map-indexed vector
+                                                      results-3))]
+            (if (empty? results-filtered)
+              (recur (pop A-bin-strings) numbers)
+              (let [high-bits-0-list
+                    (map (fn [r] (int-to-3-digits-bin (first r))) results-filtered)
+                    bit-strings (map (fn [h] {:A (str A-bin-string h)
+                                              :d (inc take-program-digits-from-the-end)})
+                                     high-bits-0-list)]
+                (recur (apply conj (pop A-bin-strings) bit-strings) numbers)))))))))
 
-;; ACTUAL PROGRAM ASNWER: TOO LONG
-;; (def answer-2 (mutate-program registers program))
+(def answer-2 (apply min (map (fn [s] (Long/parseLong s 2)) A-bin-string-iter)))
 
-;; (def answer-2 nil)
 (defn- -main [& _]
-  (println "Day XX, Part 1:" answer-1)
-  (println "Day XX, Part 2:" answer-2))
-
-(-main)
-
+  (println "Day 17, Part 1:" answer-1)
+  (println "Day 17, Part 2:" answer-2))
