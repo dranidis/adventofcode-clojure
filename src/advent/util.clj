@@ -39,6 +39,13 @@
          (vec (for [c (str/trim line)]
                 (str c))))))
 
+(defn str->2D-no-trim
+  "Read a string containing new-lines into a 2 dimensional vector of characters"
+  [input]
+  (vec (for [line (str/split-lines input)]
+         (vec (for [c line]
+                (str c))))))
+
 (comment
   (str->2D "...#...
             ..#.#..
@@ -65,10 +72,10 @@
   [grid symbol]
   (let [rows (count grid)
         cols (count (first grid))]
-    (for [r (range rows)
-          c (range cols)
-          :when (= (get-in grid [r c]) symbol)]
-      [r c])))
+    (vec (for [r (range rows)
+               c (range cols)
+               :when (= (get-in grid [r c]) symbol)]
+           [r c]))))
 
 (defn coords-of-pred
   [grid pred]
