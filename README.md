@@ -1,8 +1,8 @@
-# advent-2023
+# advent of code
 
-Advent of code 2023
+Advent of code 
 
-https://adventofcode.com/2023
+https://adventofcode.com/
 
 
 
