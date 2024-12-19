@@ -1,9 +1,13 @@
 (ns advent.2021.d23.core
   (:require
    [advent.dijkstra :refer [dijkstra-shortest-distances]]
-   [advent.util :refer [coords-of-symbol str->2D-no-trim]]))
+   [advent.util :refer [coords-of-symbol draw-grid grid-2d in-vector? set-grid
+                        str->2D-no-trim]]
+   [clojure.string :as str]
+   [clojure.term.colors :as colors]))
 
 (def example? false)
+(def part2? true)
 
 (def example "#############
 #...........#
@@ -13,51 +17,72 @@
 
 (def input (if example? example (slurp "src/advent/2021/d23/input.txt")))
 
+(def extra-lines "  #D#C#B#A#
+  #D#B#A#C#")
+
+(defn add-lines
+  [input extra-lines]
+  (let [lines (str/split-lines input)
+        elines (str/split-lines extra-lines)]
+    (str/join "\n" (concat (take 3 lines) elines (drop 3 lines)))))
+
 ;; GRID
-(def grid (str->2D-no-trim input))
-(def rows (count grid))
+(def grid (str->2D-no-trim (if part2? (add-lines input extra-lines) input)))
 (def cols (count (first grid)))
 
-(def Ws (set (coords-of-symbol grid "#")))
-;; (def Ds (coords-of-symbol grid "."))
+(def hallway-row 1)
 
-(def startA (coords-of-symbol grid "A"))
-(def startB (coords-of-symbol grid "B"))
-(def startC (coords-of-symbol grid "C"))
-(def startD (coords-of-symbol grid "D"))
-(def start {:A startA
-            :B startB
-            :C startC
-            :D startD})
+(def start {:A (vec (sort (coords-of-symbol grid "A")))
+            :B (vec (sort (coords-of-symbol grid "B")))
+            :C (vec (sort (coords-of-symbol grid "C")))
+            :D (vec (sort (coords-of-symbol grid "D")))})
 
 (def end-string "#############
 #...........#
 ###A#B#C#D###
   #A#B#C#D#
   #########")
-(def end-grid (str->2D-no-trim end-string))
-(def endA (coords-of-symbol end-grid "A"))
-(def endB (coords-of-symbol end-grid "B"))
-(def endC (coords-of-symbol end-grid "C"))
-(def endD (coords-of-symbol end-grid "D"))
-(def end {:A endA
-          :B endB
-          :C endC
-          :D endD})
+
+(def end-string-2 "#############
+#...........#
+###A#B#C#D###
+  #A#B#C#D#
+  #A#B#C#D#
+  #A#B#C#D#
+  #########")
+
+(def end-grid (str->2D-no-trim (if part2? end-string-2 end-string)))
+(def end {:A (vec (sort (coords-of-symbol end-grid "A")))
+          :B (vec (sort (coords-of-symbol end-grid "B")))
+          :C (vec (sort (coords-of-symbol end-grid "C")))
+          :D (vec (sort (coords-of-symbol end-grid "D")))})
+
+
+(def rows (count grid))
+(defn draw-state
+  [start]
+  (-> (grid-2d rows cols " ")
+      (set-grid (set (coords-of-symbol grid "#")) \#)
+      (set-grid (get start :A) (colors/red \A))
+      (set-grid (get start :B) (colors/blue \B))
+      (set-grid (get start :C) (colors/yellow \C))
+      (set-grid (get start :D) (colors/green \D))
+      (draw-grid)))
 
 (defn occupied
-  [state]
-  (set (mapcat (fn [k] (get state k)) [:A :B :C :D])))
+  [start]
+  (set (mapcat (fn [k] (get start k)) [:A :B :C :D])))
 
-(comment
-  (def keyw :A)
-  ;
-  )
-
-(def drcs [[0 1] [1 0] [0 -1] [-1 0]])
 (def pods (for [k [:A :B :C :D]
-                n [0 1]]
+                n (if part2? [0 1 2 3] [0 1])]
             [k n]))
+
+(defn assert-not-nil-all-pods
+  [state]
+  (let [c (every? (fn [pod] (not= (get-in state pod) nil)) pods)]
+    (assert c (str "All pods must be in the state." state))))
+
+(def destination-cols [3 5 7 9])
 
 (defn destination-column
   [pod]
@@ -68,12 +93,17 @@
     :D 9
     :error-destination))
 
-(defn in-room
-  [state keyw]
-  (let [c (destination-column key)]
-    (map (fn [r] ()) [2 3])))
+(defn pods-in-rooms
+  "Returns [keyw index column] for the pods in the rooms."
+  [state]
+  (for [pod pods
+        :let [[k i] pod
+              [r c] (get-in state pod)]
+        :when (not= r hallway-row)]
+    [k i c]))
 
-(defn- cost-fn [pod]
+(defn- pod-cost
+  [pod]
   (case (first pod)
     :A 1
     :B 10
@@ -81,56 +111,159 @@
     :D 1000
     :error-cost))
 
-(defn immediately-next
+(defn pod-in-hallway?
   [state pod]
-  (let [[r c] (get-in state pod)
-        cost (cost-fn pod)]
-    ;; (println r c)
-    (vec (for [[dr dc] drcs
-               :let [nr (+ r dr)
-                     nc (+ c dc)]
-               :when (not ((occupied state) [nr nc]))
-               :when (not (Ws [nr nc]))]
-           [cost [nr nc]]))))
+  (= hallway-row (first (get-in state pod))))
 
-(immediately-next start [:D 0])
+(defn other-pods-in-des-c?
+  [end pod]
+  (seq
+   (filter (fn [[kw _ c]]
+             (and (= c (destination-column pod)) (not= kw (first pod))))
+           (pods-in-rooms end))))
 
+(defn free-route?
+  [start hallway-route]
+  (every? (fn [pos] (not ((occupied start) pos))) hallway-route))
 
+(defn- route-from-hallway-to-room
+  [start pod]
+  (let [[r c] (get-in start pod)
+        dest-c (destination-column pod)
+        room-r (inc hallway-row)
+        range-c (if (< c dest-c)
+                  (range (inc c) (inc dest-c))
+                  (range (dec c) (dec dest-c) -1))
+        hallway-route (vec (for [c range-c]
+                             [hallway-row c]))]
+    (if (and (seq hallway-route)
+             (free-route? start hallway-route))
+      (let [rrs (for [rr (range room-r (+ 4 room-r))
+                      :when (not ((occupied start) [rr dest-c]))]
+                  rr)
+            column-end (apply max rrs)
+            column-route (vec (for [rr (range room-r (inc column-end))]
+                                [rr dest-c]))]
+        (apply conj hallway-route column-route))
+      [])))
+
+(defn- routes-from-room-to-hallway
+  [state pod]
+  (let [[r c] (get-in state pod)]
+    (if ((occupied state) [(dec r) c]) ;; blocked by other pod
+      []
+      (let [left-hallway-ends
+            (for [hc (range (dec c) 0 -1)
+                  :when (not ((occupied state) [hallway-row hc]))
+                  :when (not (in-vector? destination-cols hc))]
+              hc)
+
+            left-hallway-routes
+            (filter
+             (partial free-route? state)
+             (for [end left-hallway-ends]
+               (vec (for [rc (range c (dec end) -1)]
+                      [hallway-row rc]))))
+
+            right-hallway-ends
+            (for [hc (range (inc c) (dec cols))
+                  :when (not ((occupied state) [hallway-row hc]))
+                  :when (not (in-vector? destination-cols hc))]
+              hc)
+
+            right-hallway-routes
+            (filter
+             (partial free-route? state)
+             (for [end right-hallway-ends]
+               (vec (for [rc (range c (inc end) 1)]
+                      [hallway-row rc]))))
+
+            routes (if (seq left-hallway-routes)
+                     left-hallway-routes
+                     [])
+            routes (if (seq right-hallway-routes)
+                     (apply conj routes right-hallway-routes)
+                     routes)]
+        ;; (println "Pod" pod [r c] "Routes:" left-hallway-routes)
+
+        (if (seq routes)
+          (let [column-route (vec (for [rr (range (dec r) hallway-row -1)]
+                                    [rr c]))]
+            (for [route routes
+                  :when (seq route)]
+              (apply conj column-route route)))
+          [])))))
+
+(defn- settled? [end pod]
+  (let [[r c] (get-in end pod)]
+    (and (= c (destination-column pod))
+         (or (= r (inc (inc hallway-row)))
+             (and (= r (inc hallway-row))
+                  (not (other-pods-in-des-c? end pod)))))))
 
 (defn- next-positions
   "Returns a list of [position cost] pairs for
    the next positions of a pod."
-  [state pod]
-  (let [in-hallway? (= 1 (first (get-in state pod)))
-        [cost n-pos] (immediately-next state pod)]
-    (loop [pos (get-in state pod)
-           next-positions-queue n-pos
-           positions [pos]]
-      (if (empty? next-positions-queue)
-        positions
-        (let [])))))
+  [end pod]
+  (if (pod-in-hallway? end pod)
+    (if (other-pods-in-des-c? end pod)
+      []
+      (let [route (route-from-hallway-to-room end pod)]
+        ;; (println "Route:" route)
+        (if (last route)
+          [[(last route) (* (count route) (pod-cost pod))]]
+          [])))
+    (if (settled? end pod)
+      []
+      (let [routes (routes-from-room-to-hallway end pod)]
+        (if routes
+          (for [route routes
+                :when (seq route)]
+            [(last route) (* (count route) (pod-cost pod))])
+          [])))))
 
-(defn neignbors
+(defn- sort-pos
+  "Sorts the positions of each keyw in the state."
   [state]
-  (for [pod pods
-        [pod-position cost] (next-positions state pod)]
-    [cost (assoc state pod pod-position)]))
+  (into {} (for [[k v] state]
+             [k (vec (sort v))])))
+
+(defn neighbors
+  [start]
+  (assert-not-nil-all-pods start)
+  (map (fn [[c s]] [c (sort-pos s)])
+       (reduce (fn [acc pod]
+                 (reduce (fn [acc2 [pos cost]]
+                           (assert (some? pos)
+                                   (str "pos must not be nil."
+                                        start pod acc acc2 "P" pos
+                                        "NP" (next-positions start pod)))
+                           (conj acc2
+                                 [cost (assoc-in start pod pos)]))
+                         acc
+                         (next-positions start pod)))
+               []
+               pods)))
+
+(comment
+  (neighbors start)
+  (neighbors end)
+  (clojure.pprint/pp)
+
+  (def pod [:D 0])
+  (next-positions start pod)
+  (next-positions end pod)
+  (routes-from-room-to-hallway start pod)
+  (get-in start pod)
+  ((occupied start) [1 3])
+  ;
+  )
 
 
+(def dsd (dijkstra-shortest-distances start neighbors))
+(println (count dsd))
 
-
-
-(moves start :A)
-(moves start :B)
-(moves start :C)
-(moves start :D)
-
-(defn neignbors
-  [state]
-  (for [mA (moves state :A)]
-    (assoc state :A mA)))
-
-;; (dijkstra-shortest-distances start neignbors)
+(println (dsd end))
 
 
 (def answer-1 nil)
@@ -140,3 +273,19 @@
   (println "Day XX, Part 2:" answer-2))
 
 (-main)
+
+
+(loop [start start
+       steps 0
+       cost 0
+       totalcost 0]
+  (println "Cost:" cost "Total Cost:" totalcost)
+  (draw-state start)
+  (if (= start end)
+    steps
+    (let [nb (neighbors start)]
+      (if (empty? nb)
+        steps
+        (let  [i (rand-int (count nb))
+               [c n] (nth nb i)]
+          (recur n (inc steps) c (+ totalcost c)))))))
