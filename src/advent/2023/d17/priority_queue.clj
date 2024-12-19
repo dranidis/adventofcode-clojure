@@ -13,11 +13,13 @@
   "Add value to the priority queue."
   ([queue] queue)
   ([queue v]
+  ;;  (println "Adding" v)
    (.add queue v)
    queue)
   ([queue v & vs]
    (if vs
      (do
+      ;;  (println "Adding" v)
        (add-with-priority! queue v)
        (recur queue (first vs) (next vs)))
      (do (add-with-priority! queue v)
@@ -58,6 +60,10 @@
   (def q (make-priority-queue!))
   (add-with-priority! q [2 :a])
   (add-with-priority! q [2 :b])
+
+  (def q (make-priority-queue! (fn [[d _] [d2 _]] (< d d2))))
+  (add-with-priority! q [2 {:a 0}])
+  (add-with-priority! q [2 {:b 0}])
 
   (extract-min! q)
 

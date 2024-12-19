@@ -35,7 +35,9 @@
    neighbors, which are a list of [distance neighbor] pairs.
    The result is a map from destination node to distance from the start."
   [start neighbors]
-  (let [Q (add-with-priority! (make-priority-queue!) [0 start])
+  (let [Q (add-with-priority! (make-priority-queue!
+                               (fn [[d _] [d2 _]] (< d d2)))
+                              [0 start])
         D {}]
     (loop [Q Q
            D D]
@@ -47,7 +49,9 @@
             (recur Q D)
             (let [D (assoc D node dist)
                   Q (apply add-with-priority! Q
-                           (map (fn [[d n]] [(+ dist d) n])
+                           (map (fn [[d n]]
+                                  ;; (println "Adding" n "with distance" (+ dist d))
+                                  [(+ dist d) n])
                                 (neighbors node)))]
               (recur Q D))))
         D))))
@@ -65,7 +69,8 @@
   [start neighbors]
   ;; Q is a priority queue of [distance previous-node node]
   ;; D is a map from node to [distance previous-node]
-  (let [Q (add-with-priority! (make-priority-queue!) [0 nil start])
+  (let [Q (add-with-priority! (make-priority-queue!
+                               (fn [[d _] [d2 _]] (< d d2))) [0 nil start])
         D {}]
     (loop [Q Q
            D D]
@@ -98,10 +103,24 @@
       "E" [[4 "A"] [1 "F"] [2 "B"]]
       "F" [[1 "C"] [1 "E"] [2 "D"]]))
 
+
+  (neighbors "A")
   (dijkstra-shortest-distances "A" neighbors)
   ;; {"A" 0, "B" 1, "C" 3, "E" 3, "F" 4, "D" 5}
 
-  (dijkstra-shortest-distances-pred "A" neighbors)
+  (defn neighbors-m
+    "Return the neighbors of a node.
+       The neighbors are a list of [distance neighbor] pairs."
+    [n]
+    (case n
+      {:A 0} [[1 {:B 0}] [3 {:C 0}] [4 {:E 0}]]
+      {:B 0} [[1 {:A 0}] [4 {:D 0}] [2 {:E 0}]]
+      {:C 0} [[3 {:A 0}] [2 {:F 0}]]
+      {:D 0} [[4 {:B 0}] [2 {:F 0}]]
+      {:E 0} [[4 {:A 0}] [1 {:F 0}] [2 {:B 0}]]
+      {:F 0} [[1 {:C 0}] [1 {:E 0}] [2 {:D 0}]]))
+
+  (dijkstra-shortest-distances-pred {:A 0} neighbors-m)
   ;; {"A" [0 nil], "B" [1 "A"], "C" [3 "A"], "E" [3 "B"], "F" [4 "E"], "D" [5 "B"]}
 
   ;
@@ -139,7 +158,8 @@
   [start neighbors]
   ;; Q is a priority queue of [distance previous-node current-node]
   ;; D is a map from node to [distance predecessors]
-  (let [Q (add-with-priority! (make-priority-queue!) [0 nil start])
+  (let [Q (add-with-priority! (make-priority-queue!
+                               (fn [[d _] [d2 _]] (< d d2))) [0 nil start])
         D {}]
     (loop [Q Q
            D D]
