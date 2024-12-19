@@ -1,6 +1,6 @@
 (ns advent.2021.d22.core
   (:require
-   [advent.util :refer [parse-lines-with-parser str->nums]]
+   [advent.util :refer [parse-lines-with-parser str->nums third]]
    [clojure.test :refer [is testing]]))
 
 (def example? true)
@@ -21,19 +21,19 @@ on x=10..10,y=10..10,z=10..10")
 
 (def parsed (parse-lines-with-parser line-parser input))
 
-(defn on?
-  [x y z]
-  (loop [parsed parsed
-         state 0]
-    (if (empty? parsed)
-      state
-      (let [[cmd [fx tox fy toy fz toz]] (first parsed)
-            new-state (if (and (<= fx x tox)
-                               (<= fy y toy)
-                               (<= fz z toz))
-                        (if (= cmd "on") 1 0)
-                        state)]
-        (recur (rest parsed) new-state)))))
+;; (defn on?
+;;   [x y z]
+;;   (loop [parsed parsed
+;;          state 0]
+;;     (if (empty? parsed)
+;;       state
+;;       (let [[cmd [fx tox fy toy fz toz]] (first parsed)
+;;             new-state (if (and (<= fx x tox)
+;;                                (<= fy y toy)
+;;                                (<= fz z toz))
+;;                         (if (= cmd "on") 1 0)
+;;                         state)]
+;;         (recur (rest parsed) new-state)))))
 
 
 ;; ;; Brute force
@@ -50,84 +50,85 @@ on x=10..10,y=10..10,z=10..10")
 ;
 ;; Two ranges can be added with the add-ranges function.
 ;; The result is a list of distinct (not overlapping) sorted ranges.
-(defn add-ranges
-  [range1 range2]
-  ;; (prn "Adding ranges" range1 range2)
-  (let [ranges (sort (concat range1 range2))]
-    (loop [ranges ranges
-           new-ranges []]
-      (if (empty? ranges)
-        new-ranges
-        (let [[fx1 tox1] (first ranges)
-              [fx2 tox2] (second ranges)]
-          (if (or (nil? fx2) (> fx2 (inc tox1)))
-            (recur (rest ranges) (conj new-ranges [fx1 tox1]))
-            (recur (cons [(min fx1 fx2) (max tox1 tox2)] (drop 2 ranges)) new-ranges)))))))
+;; (defn add-ranges
+;;   [range1 range2]
+;;   ;; (prn "Adding ranges" range1 range2)
+;;   (let [ranges (sort (concat range1 range2))]
+;;     (loop [ranges ranges
+;;            new-ranges []]
+;;       (if (empty? ranges)
+;;         new-ranges
+;;         (let [[fx1 tox1] (first ranges)
+;;               [fx2 tox2] (second ranges)]
+;;           (if (or (nil? fx2) (> fx2 (inc tox1)))
+;;             (recur (rest ranges) (conj new-ranges [fx1 tox1]))
+;;             (recur (cons [(min fx1 fx2) (max tox1 tox2)] (drop 2 ranges)) new-ranges)))))))
 
-(testing "add-ranges"
-  (is (= [[1 8]] (add-ranges [[1 3] [5 7]] [[2 4] [6 8]])))
-  (is (= [[1 3] [5 10] [12 14]] (add-ranges [[1 3] [5 7]] [[8 10] [12 14]])))
-  (is (= [[-1 10]] (add-ranges [[1 3] [5 7]]  [[-1 10]]))))
+;; (testing "add-ranges"
+;;   (is (= [[1 8]] (add-ranges [[1 3] [5 7]] [[2 4] [6 8]])))
+;;   (is (= [[1 3] [5 10] [12 14]] (add-ranges [[1 3] [5 7]] [[8 10] [12 14]])))
+;;   (is (= [[-1 10]] (add-ranges [[1 3] [5 7]]  [[-1 10]]))))
 
-(defn subtract-range
-  "Subtract a single range from another range."
-  [[fx1 tox1] [fx2 tox2]]
-  (cond
-    ;; No overlap
-    (or (< tox2 fx1) (< tox1 fx2)) [[fx1 tox1]]
-    ;; Complete overlap
-    (and (<= fx2 fx1) (>= tox2 tox1)) []
-    ;; Partial overlap on the left
-    (and (<= fx2 fx1) (< tox2 tox1)) [[(inc tox2) tox1]]
-    ;; Partial overlap on the right
-    (and (> fx2 fx1) (>= tox2 tox1)) [[fx1 (dec fx2)]]
-    ;; Overlap in the middle
-    :else [[fx1 (dec fx2)] [(inc tox2) tox1]]))
+;; (defn subtract-range
+;;   "Subtract a single range from another range."
+;;   [[fx1 tox1] [fx2 tox2]]
+;;   (cond
+;;     ;; No overlap
+;;     (or (< tox2 fx1) (< tox1 fx2)) [[fx1 tox1]]
+;;     ;; Complete overlap
+;;     (and (<= fx2 fx1) (>= tox2 tox1)) []
+;;     ;; Partial overlap on the left
+;;     (and (<= fx2 fx1) (< tox2 tox1)) [[(inc tox2) tox1]]
+;;     ;; Partial overlap on the right
+;;     (and (> fx2 fx1) (>= tox2 tox1)) [[fx1 (dec fx2)]]
+;;     ;; Overlap in the middle
+;;     :else [[fx1 (dec fx2)] [(inc tox2) tox1]]))
 
-(testing "subtract-range"
-;; Test cases for subtract-range
-  (is (= (subtract-range [1 5] [3 4]) [[1 2] [5 5]])) ;; Partial overlap in the middle
-  (is (= (subtract-range [1 5] [0 2]) [[3 5]])) ;; Partial overlap on the left
-  (is (= (subtract-range [1 5] [4 6]) [[1 3]])) ;; Partial overlap on the right
-  (is (= (subtract-range [1 5] [1 5]) [])) ;; Complete overlap
-  (is (= (subtract-range [1 5] [6 8]) [[1 5]])) ;; No overlap
-  (is (= (subtract-range [1 5] [0 0]) [[1 5]])) ;; No overlap (range before)
-  (is (= (subtract-range [1 5] [6 6]) [[1 5]])) ;; No overlap (range after)
-  (is (= (subtract-range [1 5] [0 1]) [[2 5]])) ;; Partial overlap on the left edge
-  (is (= (subtract-range [1 5] [5 6]) [[1 4]])) ;; Partial overlap on the right edge
-  (is (= (subtract-range [1 5] [2 3]) [[1 1] [4 5]])) ;; Partial overlap in the middle
-  )
+;; (testing "subtract-range"
+;; ;; Test cases for subtract-range
+;;   (is (= (subtract-range [1 5] [3 4]) [[1 2] [5 5]])) ;; Partial overlap in the middle
+;;   (is (= (subtract-range [1 5] [0 2]) [[3 5]])) ;; Partial overlap on the left
+;;   (is (= (subtract-range [1 5] [4 6]) [[1 3]])) ;; Partial overlap on the right
+;;   (is (= (subtract-range [1 5] [1 5]) [])) ;; Complete overlap
+;;   (is (= (subtract-range [1 5] [6 8]) [[1 5]])) ;; No overlap
+;;   (is (= (subtract-range [1 5] [0 0]) [[1 5]])) ;; No overlap (range before)
+;;   (is (= (subtract-range [1 5] [6 6]) [[1 5]])) ;; No overlap (range after)
+;;   (is (= (subtract-range [1 5] [0 1]) [[2 5]])) ;; Partial overlap on the left edge
+;;   (is (= (subtract-range [1 5] [5 6]) [[1 4]])) ;; Partial overlap on the right edge
+;;   (is (= (subtract-range [1 5] [2 3]) [[1 1] [4 5]])) ;; Partial overlap in the middle
+;;   )
 
-;; Multi-ranges can also be substracted with the substract-ranges function.
-;; The result is a list of distinct (not overlapping) sorted ranges
-;; in which the substracted ranges are removed.
+;; ;; Multi-ranges can also be substracted with the substract-ranges function.
+;; ;; The result is a list of distinct (not overlapping) sorted ranges
+;; ;; in which the substracted ranges are removed.
 
-(defn subtract-ranges
-  "Subtract a list of ranges from another list of ranges."
-  [range1 range2]
-  (reduce
-   (fn [result r2]
-     (mapcat #(subtract-range % r2) result))
-   range1
-   range2))
+;; (defn subtract-ranges
+;;   "Subtract a list of ranges from another list of ranges."
+;;   [range1 range2]
+;;   (reduce
+;;    (fn [result r2]
+;;      (mapcat #(subtract-range % r2) result))
+;;    range1
+;;    range2))
 
-(testing "subtract-ranges";; Multiple ranges
-  (is (= (subtract-ranges [[1 5] [10 15]] [[3 4] [12 13]])
-         [[1 2] [5 5] [10 11] [14 15]])) ;; Multiple ranges with partial overlaps
-  (is (= (subtract-ranges [[1 10]] [[3 7]])
-         [[1 2] [8 10]])) ;; Single range with partial overlap in the middle
-  (is (= (subtract-ranges [[1 10] [15 20]] [[5 17]])
-         [[1 4] [18 20]])) ;; Multiple ranges with a large overlapping range
-  (is (= (subtract-ranges [[1 5] [10 15]] [[0 20]])
-         [])) ;; Complete overlap with a large range
-  (is (= (subtract-ranges [[1 5] [10 15]] [[6 9]])
-         [[1 5] [10 15]])) ;; No overlap with a range in between
-  )
+;; (testing "subtract-ranges";; Multiple ranges
+;;   (is (= (subtract-ranges [[1 5] [10 15]] [[3 4] [12 13]])
+;;          [[1 2] [5 5] [10 11] [14 15]])) ;; Multiple ranges with partial overlaps
+;;   (is (= (subtract-ranges [[1 10]] [[3 7]])
+;;          [[1 2] [8 10]])) ;; Single range with partial overlap in the middle
+;;   (is (= (subtract-ranges [[1 10] [15 20]] [[5 17]])
+;;          [[1 4] [18 20]])) ;; Multiple ranges with a large overlapping range
+;;   (is (= (subtract-ranges [[1 5] [10 15]] [[0 20]])
+;;          [])) ;; Complete overlap with a large range
+;;   (is (= (subtract-ranges [[1 5] [10 15]] [[6 9]])
+;;          [[1 5] [10 15]])) ;; No overlap with a range in between
+;;   )
 
 
 (defn add-ranges-1d
   "Add two 1D ranges."
   [range1 range2]
+  (println "Adding ranges" range1 range2)
   (let [ranges (sort (concat range1 range2))]
     (loop [ranges ranges
            new-ranges []]
@@ -135,98 +136,126 @@ on x=10..10,y=10..10,z=10..10")
         new-ranges
         (let [[fx1 tox1] (first ranges)
               [fx2 tox2] (second ranges)]
+          (println "fx1 tox1" fx1 tox1)
           (if (or (nil? fx2) (> fx2 (inc tox1)))
             (recur (rest ranges) (conj new-ranges [fx1 tox1]))
             (recur (cons [(min fx1 fx2) (max tox1 tox2)] (drop 2 ranges)) new-ranges)))))))
 
-(defn add-ranges-3d
-  "Add two lists of 3D ranges."
-  [ranges1 ranges2]
-  (let [all-ranges (concat ranges1 ranges2)]
-    ;; (prn all-ranges)
-    (reduce
-     (fn [result range]
-       (let [[[fx1 tox1] [fy1 toy1] [fz1 toz1]] range]
-         (vec (for [x (add-ranges (mapv first result) [[fx1 tox1]])
-              ;;  :let [_ (prn "x range" x)]
-                    y (add-ranges (mapv second result) [[fy1 toy1]])
-              ;;  :let [_ (prn "y range" y)]
+(def Xs (sort (map first (map second parsed))))
+(def Ys (map second (map second parsed)))
+(def Zs (map third (map second parsed)))
 
-                    z (add-ranges (mapv #(nth % 2) result) [[fz1 toz1]])
-              ;;  :let [_ (prn "z range" z)]
-                    ]
-                [x y z]))))
-     []
-     all-ranges)))
-
-(is (= (add-ranges-3d [[[1 3] [1 3] [1 3]]]
-                      [[[2 4] [2 4] [2 4]]])
-       [[[1 4] [1 4] [1 4]]]))
-
-(is (= (add-ranges-3d [[[1 3] [1 3] [1 3]] [[5 7] [5 7] [5 7]]]
-                      [[[2 4] [2 4] [2 4]] [[6 8] [6 8] [6 8]]])
-       [[[1 8] [1 8] [1 8]]]))
-
-(defn subtract-ranges-3d
-  "Subtract a list of 3D ranges from another list of 3D ranges."
+(defn add-ranges
+  "Add two ranges. If there is no overlap, return both ranges. If there is an overlap, return the overlapping range."
   [range1 range2]
-  (reduce
-   (fn [result r2]
-     (mapcat
-      (fn [[[fx1 tox1] [fy1 toy1] [fz1 toz1]]]
-        (for [x (subtract-range [fx1 tox1] (first r2))
-              y (subtract-range [fy1 toy1] (second r2))
-              z (subtract-range [fz1 toz1] (nth r2 2))]
-          [x y z]))
-      result))
-   range1
-   range2))
-(testing "subtract-ranges-3d"
-;; Test cases for subtract-ranges-3d
-  (is (= (subtract-ranges-3d [[[1 5] [1 5] [1 5]]]
-                             [[[3 4] [3 4] [3 4]]])
-         [[[1 2] [1 2] [1 2]]
-          [[1 2] [1 2] [5 5]]
-          [[1 2] [5 5] [1 2]]
-          [[1 2] [5 5] [5 5]]
-          [[5 5] [1 2] [1 2]]
-          [[5 5] [1 2] [5 5]]
-          [[5 5] [5 5] [1 2]]
-          [[5 5] [5 5] [5 5]]]))
+  (println "Adding two ranges" range1 range2)
+  (if (empty? range1) range2
+      (if (empty? range2)
+        range1
+        (let [[x1 x2] range1
+              [x3 x4] range2
+              sorted (sort [[x1 x2] [x3 x4]])
+              [[fx1 tox1] [fx2 tox2]] sorted]
+          (if (<= fx2 tox1)
+            [[(max fx1 fx2) (min tox1 tox2)]]
+            [[fx1 tox1] [fx2 tox2]])))))
 
-  (is (= (subtract-ranges-3d [[[1 10] [1 10] [1 10]]] [[[3 7] [3 7] [3 7]]])
-         [[[1 2] [1 2] [1 2]] [[1 2] [1 2] [8 10]] [[1 2] [8 10] [1 2]] [[1 2] [8 10] [8 10]]
-          [[8 10] [1 2] [1 2]] [[8 10] [1 2] [8 10]] [[8 10] [8 10] [1 2]] [[8 10] [8 10] [8 10]]]))
+(defn add-range-to-list
+  [ranges range]
+  (println "Adding range" ranges range)
+  (reduce add-ranges range ranges))
 
-  (is (= (subtract-ranges-3d [[[1 5] [1 5] [1 5]] [[10 15] [10 15] [10 15]]]
-                             [[[3 4] [3 4] [3 4]] [[12 13] [12 13] [12 13]]])
-         [[[1 2] [1 2] [1 2]] [[1 2] [1 2] [5 5]] [[1 2] [5 5] [1 2]] [[1 2] [5 5] [5 5]]
-          [[5 5] [1 2] [1 2]] [[5 5] [1 2] [5 5]] [[5 5] [5 5] [1 2]] [[5 5] [5 5] [5 5]]
-          [[10 11] [10 11] [10 11]] [[10 11] [10 11] [14 15]] [[10 11] [14 15] [10 11]] [[10 11] [14 15] [14 15]]
-          [[14 15] [10 11] [10 11]] [[14 15] [10 11] [14 15]] [[14 15] [14 15] [10 11]] [[14 15] [14 15] [14 15]]]))
+(add-range-to-list [[1 3] [5 7]] [4 6])
 
-  (is (= (subtract-ranges-3d [[[1 5] [1 5] [1 5]]]
-                             [[[0 0] [0 0] [0 0]]])
-         [[[1 5] [1 5] [1 5]]])) ;; No overlap
+(reduce add-range-to-list [] Xs)
+;; (defn add-ranges-3d
+;;   "Add two lists of 3D ranges."
+;;   [ranges1 ranges2]
+;;   (let [all-ranges (concat ranges1 ranges2)]
+;;     ;; (prn all-ranges)
+;;     (reduce
+;;      (fn [result range]
+;;        (let [[[fx1 tox1] [fy1 toy1] [fz1 toz1]] range]
+;;          (vec (for [x (add-ranges (mapv first result) [[fx1 tox1]])
+;;               ;;  :let [_ (prn "x range" x)]
+;;                     y (add-ranges (mapv second result) [[fy1 toy1]])
+;;               ;;  :let [_ (prn "y range" y)]
 
-  (is (= (subtract-ranges-3d [[[1 5] [1 5] [1 5]]]
-                             [[[6 6] [6 6] [6 6]]])
-         [[[1 5] [1 5] [1 5]]])) ;; No overlap
+;;                     z (add-ranges (mapv #(nth % 2) result) [[fz1 toz1]])
+;;               ;;  :let [_ (prn "z range" z)]
+;;                     ]
+;;                 [x y z]))))
+;;      []
+;;      all-ranges)))
 
-  (is (= (subtract-ranges-3d [[[1 5] [1 5] [1 5]]]
-                             [[[0 1] [0 1] [0 1]]])
-         [[[2 5] [2 5] [2 5]]])) ;; Partial overlap on the left edge
+;; (is (= (add-ranges-3d [[[1 3] [1 3] [1 3]]]
+;;                       [[[2 4] [2 4] [2 4]]])
+;;        [[[1 4] [1 4] [1 4]]]))
 
-  (is (= (subtract-ranges-3d [[[1 5] [1 5] [1 5]]]
-                             [[[5 6] [5 6] [5 6]]])
-         [[[1 4] [1 4] [1 4]]])) ;; Partial overlap on the right edge)
-  )
+;; (is (= (add-ranges-3d [[[1 3] [1 3] [1 3]] [[5 7] [5 7] [5 7]]]
+;;                       [[[2 4] [2 4] [2 4]] [[6 8] [6 8] [6 8]]])
+;;        [[[1 8] [1 8] [1 8]]]))
 
-(defn count-ons
-  [ranges]
-  (apply + (map (fn [[[x1 x2] [y1 y2] [z1 z2]]]
-                  (* (inc (- x2 x1)) (inc (- y2 y1)) (inc (- z2 z1))))
-                ranges)))
+;; (defn subtract-ranges-3d
+;;   "Subtract a list of 3D ranges from another list of 3D ranges."
+;;   [range1 range2]
+;;   (reduce
+;;    (fn [result r2]
+;;      (mapcat
+;;       (fn [[[fx1 tox1] [fy1 toy1] [fz1 toz1]]]
+;;         (for [x (subtract-range [fx1 tox1] (first r2))
+;;               y (subtract-range [fy1 toy1] (second r2))
+;;               z (subtract-range [fz1 toz1] (nth r2 2))]
+;;           [x y z]))
+;;       result))
+;;    range1
+;;    range2))
+;; (testing "subtract-ranges-3d"
+;; ;; Test cases for subtract-ranges-3d
+;;   (is (= (subtract-ranges-3d [[[1 5] [1 5] [1 5]]]
+;;                              [[[3 4] [3 4] [3 4]]])
+;;          [[[1 2] [1 2] [1 2]]
+;;           [[1 2] [1 2] [5 5]]
+;;           [[1 2] [5 5] [1 2]]
+;;           [[1 2] [5 5] [5 5]]
+;;           [[5 5] [1 2] [1 2]]
+;;           [[5 5] [1 2] [5 5]]
+;;           [[5 5] [5 5] [1 2]]
+;;           [[5 5] [5 5] [5 5]]]))
+
+;;   (is (= (subtract-ranges-3d [[[1 10] [1 10] [1 10]]] [[[3 7] [3 7] [3 7]]])
+;;          [[[1 2] [1 2] [1 2]] [[1 2] [1 2] [8 10]] [[1 2] [8 10] [1 2]] [[1 2] [8 10] [8 10]]
+;;           [[8 10] [1 2] [1 2]] [[8 10] [1 2] [8 10]] [[8 10] [8 10] [1 2]] [[8 10] [8 10] [8 10]]]))
+
+;;   (is (= (subtract-ranges-3d [[[1 5] [1 5] [1 5]] [[10 15] [10 15] [10 15]]]
+;;                              [[[3 4] [3 4] [3 4]] [[12 13] [12 13] [12 13]]])
+;;          [[[1 2] [1 2] [1 2]] [[1 2] [1 2] [5 5]] [[1 2] [5 5] [1 2]] [[1 2] [5 5] [5 5]]
+;;           [[5 5] [1 2] [1 2]] [[5 5] [1 2] [5 5]] [[5 5] [5 5] [1 2]] [[5 5] [5 5] [5 5]]
+;;           [[10 11] [10 11] [10 11]] [[10 11] [10 11] [14 15]] [[10 11] [14 15] [10 11]] [[10 11] [14 15] [14 15]]
+;;           [[14 15] [10 11] [10 11]] [[14 15] [10 11] [14 15]] [[14 15] [14 15] [10 11]] [[14 15] [14 15] [14 15]]]))
+
+;;   (is (= (subtract-ranges-3d [[[1 5] [1 5] [1 5]]]
+;;                              [[[0 0] [0 0] [0 0]]])
+;;          [[[1 5] [1 5] [1 5]]])) ;; No overlap
+
+;;   (is (= (subtract-ranges-3d [[[1 5] [1 5] [1 5]]]
+;;                              [[[6 6] [6 6] [6 6]]])
+;;          [[[1 5] [1 5] [1 5]]])) ;; No overlap
+
+;;   (is (= (subtract-ranges-3d [[[1 5] [1 5] [1 5]]]
+;;                              [[[0 1] [0 1] [0 1]]])
+;;          [[[2 5] [2 5] [2 5]]])) ;; Partial overlap on the left edge
+
+;;   (is (= (subtract-ranges-3d [[[1 5] [1 5] [1 5]]]
+;;                              [[[5 6] [5 6] [5 6]]])
+;;          [[[1 4] [1 4] [1 4]]])) ;; Partial overlap on the right edge)
+;;   )
+
+;; (defn count-ons
+;;   [ranges]
+;;   (apply + (map (fn [[[x1 x2] [y1 y2] [z1 z2]]]
+;;                   (* (inc (- x2 x1)) (inc (- y2 y1)) (inc (- z2 z1))))
+;;                 ranges)))
 
 (defn range-intersection
   "Return the intersection of two ranges."
@@ -237,8 +266,8 @@ on x=10..10,y=10..10,z=10..10")
       nil
       [(max fx1 fx2) (min tox1 tox2)])))
 
-(defn add-3d-range
-  [])
+;; (defn add-3d-range
+;;   [])
 
 (testing "range-intersection"
   (is (= (range-intersection [1 5] [3 7]) [3 5])) ;; Partial overlap in the middle
@@ -253,24 +282,79 @@ on x=10..10,y=10..10,z=10..10")
   (is (= (range-intersection [1 5] [2 3]) [2 3])) ;; Partial overlap in the middle
   )
 
-(def final-ranges
-  (loop [parsed parsed
-         ranges []]
-    ;; (prn  ranges)
-    (prn (count-ons ranges))
-    (prn (first parsed))
-    (if (empty? parsed)
-      ranges
-      (let [[cmd range-3d] (first parsed)
-            [[fx1 tox1] [fy1 toy1] [fz1 toz1]] range-3d]
-        (if (or (< tox1 -50) (> fx1 50)
-                (< toy1 -50) (> fy1 50)
-                (< toz1 -50) (> fz1 50))
-          (recur (rest parsed) ranges)
-          (let [new-ranges (if (= cmd "on")
-                             (add-ranges-3d ranges [range-3d])
-                             (subtract-ranges-3d ranges [range-3d]))]
-            (recur (rest parsed) new-ranges)))))))
+(range-intersection [0 2] [1 3])
+
+(defn range-intersection-2d
+  [range1 range2]
+  (let [[x1 x2] range1
+        [y1 y2] range2]
+    [(range-intersection x1 y1) (range-intersection x2 y2)]))
+
+(defn range-intersection-3d
+  [range1 range2]
+  (let [[x1 x2 x3] range1
+        [y1 y2 y3] range2
+        x (range-intersection x1 y1)
+        y (range-intersection x2 y2)
+        z (range-intersection x3 y3)]
+    ;; (println "r2d" range1 range2)
+    (if (or (nil? x) (nil? y) (nil? z))
+      []
+      [(range-intersection x1 y1)
+       (range-intersection x2 y2)
+       (range-intersection x3 y3)])))
+
+(defn c
+  [a s]
+  (- (apply + (map (fn [[[x1 x2] [y1 y2] [z1 z2]]]
+                     (* (inc (- x2 x1)) (inc (- y2 y1)) (inc (- z2 z1))))
+                   a))
+     (apply + (map (fn [[[x1 x2] [y1 y2] [z1 z2]]]
+                     (* (inc (- x2 x1)) (inc (- y2 y1)) (inc (- z2 z1))))
+                   (remove empty? s)))))
+
+(loop [parsed parsed
+       add-ranges []
+       subtract-ranges []]
+  (println (c add-ranges subtract-ranges))
+  (if (empty? parsed)
+    (c add-ranges subtract-ranges)
+    (let [[cmd range-3d] (first parsed)
+          subtracted (for [a add-ranges
+                           i [(range-intersection-3d a range-3d)]]
+                       i)]
+      (if (= cmd "on")
+        (recur (rest parsed)
+               (conj add-ranges range-3d)
+               (apply conj subtract-ranges subtracted))
+        (recur (rest parsed)
+               add-ranges
+               (apply conj subtract-ranges subtracted))))))
+
+(map (fn [[[x1 x2] [y1 y2] [z1 z2]]]
+       (* (inc (- x2 x1)) (inc (- y2 y1)) (inc (- z2 z1)))) s)
+(clojure.pprint/pp)
+(for [a [[[10 12] [10 12] [10 12]]]]
+  (range-intersection-3d a [[11 13] [11 13] [11 13]]))
+
+;; (def final-ranges
+;;   (loop [parsed parsed
+;;          ranges []]
+;;     ;; (prn  ranges)
+;;     (prn (count-ons ranges))
+;;     (prn (first parsed))
+;;     (if (empty? parsed)
+;;       ranges
+;;       (let [[cmd range-3d] (first parsed)
+;;             [[fx1 tox1] [fy1 toy1] [fz1 toz1]] range-3d]
+;;         (if (or (< tox1 -50) (> fx1 50)
+;;                 (< toy1 -50) (> fy1 50)
+;;                 (< toz1 -50) (> fz1 50))
+;;           (recur (rest parsed) ranges)
+;;           (let [new-ranges (if (= cmd "on")
+;;                              (add-ranges-3d ranges [range-3d])
+;;                              (subtract-ranges-3d ranges [range-3d]))]
+;;             (recur (rest parsed) new-ranges)))))))
 
 ;; (def final-ranges
 ;;   (loop [parsed parsed
