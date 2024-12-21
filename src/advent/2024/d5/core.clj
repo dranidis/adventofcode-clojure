@@ -3,7 +3,7 @@
    [advent.util :refer [in-vector? middle-value-of-vector]]
    [clojure.string :as str]))
 
-(def input-example "47|53
+(def example "47|53
 97|13
 97|61
 97|47
@@ -66,10 +66,11 @@
 
 (defn put-in-correct-order
   [incorrect-report]
-  (vec (sort (fn [a b]
-               (or (in-vector? page-ordering [a b])
-                   (not (in-vector? page-ordering [b a]))))
+  (vec (sort (fn [a b] (some? (in-vector? page-ordering [a b])))
              incorrect-report)))
+
+;; (put-in-correct-order [75,97,47,61,53])
+;; (in-vector? page-ordering [21 13])
 
 (def answer-2 (apply + (map middle-value-of-vector (map put-in-correct-order incorrect-reports))))
 
