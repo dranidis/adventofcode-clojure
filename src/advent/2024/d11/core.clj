@@ -8,13 +8,13 @@
 
 (def stones-map
   "Mapping of stones to their count"
-  (reduce
-   (fn [acc s]
-     (assoc acc s (inc (get acc s 0))))
-   {}
-   stones))
+  (reduce (fn [acc s]
+            (assoc acc s (inc (get acc s 0))))
+          {}
+          stones))
 
-(defn- change-stone [s]
+(defn- change-stone
+  [s]
   (cond
     (zero? s) [1]
 
@@ -26,38 +26,33 @@
 
 (defn increase-by-freq
   [stones-map new-stone-key freq]
-  (assoc stones-map new-stone-key (if (get stones-map new-stone-key)
-                                    (+ freq (get stones-map new-stone-key))
-                                    freq)))
+  (update stones-map new-stone-key (fnil + 0) freq))
+
 (defn stones-map-change
   [stones-map]
   (loop [keys (keys stones-map)
          values-to-add-at-the-end {}
          new-stones-map stones-map]
     (if (empty? keys)
-      (reduce-kv
-       (fn [acc k v]
-         (assoc acc k v))
-       new-stones-map
-       values-to-add-at-the-end)
+      (reduce-kv (fn [acc k v]
+                   (assoc acc k v))
+                 new-stones-map
+                 values-to-add-at-the-end)
 
       (let [key (first keys)
-            values-to-add-sync (reduce
-                                (fn [acc new-stone-key]
-                                  (increase-by-freq acc new-stone-key (get stones-map key)))
-                                values-to-add-at-the-end
-                                (change-stone key))]
+            values-to-add-sync
+            (reduce (fn [acc new-stone-key]
+                      (increase-by-freq acc new-stone-key (get stones-map key)))
+                    values-to-add-at-the-end
+                    (change-stone key))]
+
         (recur (rest keys)
                values-to-add-sync
                (dissoc new-stones-map key))))))
 
 (defn stones-map-after-times
   [times]
-  (loop [stones-map stones-map
-         t 0]
-    (if (= t times)
-      stones-map
-      (recur (stones-map-change stones-map) (inc t)))))
+  (->> stones-map (iterate stones-map-change) (drop times) first))
 
-(println "Day 11, Answer 1" (apply + (vals (stones-map-after-times 25))))
-(println "Day 11, Answer 2" (apply + (vals (stones-map-after-times 75))))
+(println "Day 11, Answer 1" (->> (stones-map-after-times 25) vals (apply +)))
+(println "Day 11, Answer 2" (->> (stones-map-after-times 75) vals (apply +)))
