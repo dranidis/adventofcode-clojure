@@ -10,6 +10,9 @@
 (defn str->nums [s]
   (mapv parse-long (re-seq #"-?\d+" s)))
 
+(defn str->num [s]
+  (parse-long (re-find #"-?\d+" s)))
+
 (comment
   (str->nums "1 2 -3")
   (str->nums "1 2 --3")
