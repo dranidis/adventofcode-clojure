@@ -10,6 +10,9 @@
 (defn str->nums [s]
   (mapv parse-long (re-seq #"-?\d+" s)))
 
+(defn str->num [s]
+  (parse-long (re-find #"-?\d+" s)))
+
 (comment
   (str->nums "1 2 -3")
   (str->nums "1 2 --3")
@@ -263,6 +266,9 @@
                  stack (concat (rest stack) next)]
              (recur stack visited))))))
 
+(defn flood-fill-rc
+  [next-fn [r c]]
+  (flood-fill next-fn r c))
 
 (defn parse-binary
   "Parse a string as a binary number."

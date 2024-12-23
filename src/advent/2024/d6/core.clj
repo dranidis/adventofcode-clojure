@@ -22,13 +22,16 @@
 
 (def guard-pos (first (coords-of-symbol the-map "^")))
 
-(defn change-dir
-  [dir]
-  (case dir
-    [0 1] [1 0] ;; down
-    [1 0] [0 -1] ;; left
-    [0 -1] [-1 0] ;; up
-    [-1 0] [0 1])) ;; right
+(def change-dir
+  (let [change-dir-fn (fn [dir]
+                        (case dir
+                          [0 1] [1 0] ;; down
+                          [1 0] [0 -1] ;; left
+                          [0 -1] [-1 0] ;; up
+                          [-1 0] [0 1] ;; right
+                          ))]
+    (into {} (map (juxt identity change-dir-fn)
+                  [[0 1] [1 0] [0 -1] [-1 0]]))))
 
 (def visited
   (loop [visited #{guard-pos}
@@ -52,22 +55,23 @@
          dir [-1 0]]
     (if (visited (conj [pos] dir))
       true
-      (let [new-r (+ (first pos) (first dir))
-            new-c (+ (second pos) (second dir))
-            new-cell (get-in the-map [new-r new-c])]
-        (if (nil? new-cell)
-          false
+      (let [new-r (+ (nth pos 0) (nth dir 0))
+            new-c (+ (nth pos 1) (nth dir 1))
+            new-pos [new-r new-c]]
+        (if-let [new-cell (get-in the-map new-pos)]
           (if (= new-cell "#")
             (recur visited pos (change-dir dir))
-            (recur (conj visited [pos dir]) [new-r new-c] dir)))))))
+            (recur (conj visited [pos dir]) new-pos dir))
+          false)))))
 
 (def answer-2
-  (count (filter true?
-                 (for [[r c] visited
-                       :when (not= [r c] guard-pos)]
-                   (loop? (assoc-in the-map [r c] "#"))))))
+  (count (for [rc visited
+               :when (and (not= rc guard-pos)
+                          (loop? (assoc-in the-map rc "#")))]
+           rc)))
 
 (defn -main [& _]
+  (println "Replacing first and second with nth, if-let")
   (println "Day 1, Part 1:" answer-1)
   (println "Day 1, Part 2:" answer-2))
 

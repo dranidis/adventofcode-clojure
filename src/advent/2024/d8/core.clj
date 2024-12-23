@@ -24,7 +24,9 @@
 (def rows (count grid))
 (def cols (count (first grid)))
 
-(def antenna-set (set (remove #(= % ".") (flatten grid))))
+(def antenna-set (->> (flatten grid)
+                      (remove #(= % "."))
+                      set))
 
 (defn antenna-locations
   "Find the locations of a given antenna in the grid."
