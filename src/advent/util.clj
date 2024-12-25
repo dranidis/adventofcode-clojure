@@ -275,6 +275,21 @@
   [binary-str]
   (Integer/parseInt binary-str 2))
 
-(defn long->bin [n] (Long/parseLong (str n) 2))
+(defn long->bin-str [n] (Long/toString n 2))
+(defn long->bin-vec [n]
+  (mapv #(parse-long (str %)) (vec (long->bin-str n))))
 
-(defn bin->long [b] (Long/parseLong (apply str b) 2))
+(comment
+  (long->bin-str 8)
+  ;; "1000"
+
+  (long->bin-vec 8)
+  ;; [1 0 0 0]
+  )
+
+(defn bin-vec->long [b] (Long/parseLong (apply str b) 2))
+
+(comment
+  (bin-vec->long [1 0 0 0])
+  ; 8
+  )
