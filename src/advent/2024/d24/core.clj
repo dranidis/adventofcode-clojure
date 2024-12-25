@@ -1,6 +1,6 @@
 (ns advent.2024.d24.core
   (:require
-   [advent.util :refer [bin->long in-vector?]]
+   [advent.util :refer [bin-vec->long in-vector?]]
    [clojure.string :as str]
    [clojure.test :refer [is]]))
 
@@ -73,7 +73,7 @@ x02 OR y02 -> z02")
             v1 (get wires (:i1 gate))
             v2 (get wires (:i2 gate))
             gate (-> gate
-                     (assoc  :iv1 v1 :iv2 v2)
+                     (assoc :iv1 v1 :iv2 v2)
                      operate)
             updated-wires (assoc wires (:o gate) (:v gate))]
         (recur updated-wires (rest gates) (conj updated-gates gate))))))
@@ -97,7 +97,7 @@ x02 OR y02 -> z02")
                        (settled gates 10000000)
                        (into [])
                        (filter (fn [[w v]] (str/starts-with? w "z")))
-                       sort reverse (map second) bin->long))
+                       sort reverse (map second) bin-vec->long))
 
 
 (answer-1)
