@@ -274,3 +274,7 @@
   "Parse a string as a binary number."
   [binary-str]
   (Integer/parseInt binary-str 2))
+
+(defn long->bin [n] (Long/parseLong (str n) 2))
+
+(defn bin->long [b] (Long/parseLong (apply str b) 2))

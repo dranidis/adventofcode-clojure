@@ -1,4 +1,4 @@
-(ns advent.2024.template
+(ns advent.template
   (:require
    [advent.util :refer [coords-of-pred coords-of-symbol
                         parse-lines-with-numbers str->2D str->2D-num]]
