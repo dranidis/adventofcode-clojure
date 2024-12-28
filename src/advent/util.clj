@@ -1,7 +1,8 @@
 (ns advent.util
   (:require
    [clojure.string :as str]
-   [clojure.term.colors :as colors]))
+   [clojure.term.colors :as colors]
+   [criterium.core :refer [quick-bench]]))
 
 (defn third
   [l]
@@ -273,13 +274,16 @@
 (defn parse-binary
   "Parse a string as a binary number."
   [binary-str]
-  (Integer/parseInt binary-str 2))
+  (Long/parseLong binary-str 2))
 
 (defn long->bin-str [n] (Long/toString n 2))
 (defn long->bin-vec [n]
   (mapv #(parse-long (str %)) (vec (long->bin-str n))))
 
 (comment
+  (parse-binary "101")
+  ;;=> 5
+
   (long->bin-str 8)
   ;; "1000"
 
@@ -292,4 +296,143 @@
 (comment
   (bin-vec->long [1 0 0 0])
   ; 8
+  )
+
+;; COUNTER
+
+(defn counter [] {})
+;; Use get as in a map to get the times an element appears
+;; Remove an element with dissoc
+
+(defn add-to-counter [counter item]
+  (update counter item (fnil inc 0)))
+
+(defn add-to-counter-times [counter item n]
+  (update counter item (fnil #(+ % n) 0)))
+
+(defn add-items-to-counter [counter items]
+  (reduce #(add-to-counter %1 %2) counter items))
+
+(defn add-items-to-counter-times [counter items n]
+  (reduce #(add-to-counter-times %1 %2 n) counter items))
+
+(comment
+  (-> (counter) (add-to-counter 1) (add-to-counter-times 1 3) (add-to-counter 2))
+  ;;=> {1 4, 2 1}
+
+  (-> (counter) (add-to-counter 1) (add-to-counter 1) (add-to-counter 2) first)
+  ;;=> [1 2]
+
+  (-> (counter) (add-to-counter 1) (add-to-counter 1) (add-to-counter 2) (dissoc 1))
+  ;;=> {2 1}
+
+  (-> (counter) (add-to-counter "a") (get "a"))
+  ;;=> 1
+
+  (-> (counter)
+      (add-to-counter "a")
+      (add-to-counter "b")
+      (dissoc "a"))
+  ;;=> {"b" 1}
+
+  (add-items-to-counter (counter) [1 2 3])
+  ;;=> {1 1, 2 1, 3 1}
+
+  (add-items-to-counter-times (counter) [1 2 3] 3)
+  ;;=> {1 3, 2 3, 3 3}
+  )
+
+(defn chinese-remainder-theorem-naive
+  "Receives as an argument a list of [r_i N_i] pairs
+   and finds the x where
+   x is congruent to r1 (mod N1) etc.
+   That is if we take x mod N we get r1.
+   Example:
+   
+     To find x where 
+     -  x mod 5 = 3, 
+     -  x mod 7 = 1
+     -  x mod 8 = 6
+   
+   call with (chinese-remainter-theorem [[3 5] [1 7] [6 8]])"
+  [r-mods]
+  (let [r_is (mapv #(nth % 0) r-mods)
+        M_is (mapv #(nth % 1) r-mods)
+        M (apply * M_is)
+        Ms (mapv #(quot M %) M_is)
+        ;; uses linear search to find x_i (s)
+        ;; might not be efficient for large numbers
+        x_is (mapv (fn [M m]
+                     (let [Mm (mod M m)]
+                       (first
+                        (for [x (range)
+                              :when (= 1 (mod (* Mm x) m))]
+                          x))))
+                   Ms M_is)
+        rMxs (map * r_is Ms x_is)]
+    (mod (apply + rMxs) M)))
+
+(comment
+  ;; https://www.youtube.com/watch?v=zIFehsBHB8o
+  ;; find x where 
+  ;;     x mod 5 = 3, 
+  ;;     x mod 7 = 1
+  ;;     x mod 8 = 6
+  ;; the numbers 5 7 8 must be co-primes. If they are primes, then they are co-primes.
+  (def r-mods [[3 5] [1 7] [6 8]])
+
+  (chinese-remainder-theorem-naive r-mods)
+  ;;=> 78
+
+  ;
+  )
+
+(defn gcd [a b]
+  (if (zero? b)
+    a
+    (recur b (mod a b))))
+
+(defn lcm [a b]
+  (/ (* a b) (gcd a b)))
+
+(defn mod-inverse [a m]
+  "Finds the modular multiplicative inverse of a under modulo m."
+  (letfn [(egcd [a b]
+            (if (zero? b)
+              [a 1 0]
+              (let [[g x y] (egcd b (mod a b))]
+                [g y (- x (* y (quot a b)))])))]
+    (let [[g x _] (egcd a m)]
+      (if (not= g 1)
+        (throw (ex-info "Inverse does not exist" {:a a :m m}))
+        (mod x m)))))
+
+(defn chinese-remainder-theorem
+  "Receives as an argument a list of [r_i N_i] pairs
+     and finds the x where
+     x is congruent to r1 (mod N1) etc.
+     That is if we take x mod N we get r1.
+     Example:
+     
+       To find x where 
+       -  x mod 5 = 3, 
+       -  x mod 7 = 1
+       -  x mod 8 = 6
+     
+     call with (chinese-remainter-theorem [[3 5] [1 7] [6 8]])"
+  [pairs]
+  "Solves the system of congruences using the Chinese Remainder Theorem."
+  (let [N (reduce * (map second pairs))  ; Product of all moduli
+        terms (map (fn [[r_i N_i]]
+                     (let [n_i (/ N N_i)
+                           inv-n_i (mod-inverse n_i N_i)]
+                       (* r_i n_i inv-n_i)))
+                   pairs)]
+    (mod (reduce + terms) N)))
+
+(comment
+;; Example usage:
+  (def example [[3 5] [1 7] [6 8]])
+  (chinese-remainder-theorem example)
+;;=> 78
   )
