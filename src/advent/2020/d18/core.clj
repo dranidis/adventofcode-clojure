@@ -11,26 +11,6 @@
                             str/split-lines
                             (mapv line-p)))
 
-(defn pars->vec [expression expr-with-vectors]
-  (if (empty? expression)
-    expr-with-vectors
-    (let [symbol (first expression)]
-      (if (not= ")" symbol)
-        (pars->vec (rest expression) (conj expr-with-vectors symbol))
-
-        (let [n-expr-with-vectors
-              (loop [stck expr-with-vectors
-                     lifo (list)]
-                  ;; (println "L" stck e)
-                (if (empty? stck)
-                  :error
-                  (let [top (peek stck)]
-                    (if (not= top "(")
-                      (recur (pop stck) (conj lifo top))
-                      (conj (pop stck) lifo)))))]
-          (pars->vec (rest expression) n-expr-with-vectors))))))
-
-
 (defn post-fix-calc [post-fix-expr]
   (loop [outp post-fix-expr
          stack []]
@@ -45,47 +25,58 @@
                 res (if (= "+" sym) (+ f s) (* f s))]
             (recur (rest outp) (-> stack pop pop (conj res)))))))))
 
-(defn- evaluate-vec-expression-2 [precedence expression]
+(defn- shunting-alg [precedence infix-expression]
   (letfn
-   [(evl [pe nums ops]
-      (if (empty? pe)
-        (post-fix-calc
-         (loop [nums nums
-                ops ops]
-           (if (empty? ops)
-             nums
-             (recur (conj nums (peek ops)) (pop ops)))))
+   [(evl [infix-expression output op-stack]
+      (if (empty? infix-expression)
+        (loop [output output
+               op-stack op-stack]
+          (if (empty? op-stack)
+            output
+            (recur (conj output (peek op-stack)) (pop op-stack))))
 
-        (let [elem (nth pe 0)]
+        (let [elem (nth infix-expression 0)]
           (cond
-            ;; (= elem "+") ;; has higher prec than "*" 
-            ;; (evl (rest pe) nums (conj ops elem))
+            (number? elem) (evl (rest infix-expression) (conj output elem) op-stack)
 
-            (#{"*" "+"} elem) ;; has lower prec than "+"; pop all "+" and push to the out
-            (let [[nums ops] (loop [nums nums
-                                    ops ops]
-                               (if (empty? ops)
-                                 [nums ops]
-                                 (let [top (peek ops)]
-                                   (if (>= (precedence top elem) 0)
-                                     (recur (conj nums top) (pop ops))
-                                     [nums ops]))))]
-              (evl (rest pe) nums (conj ops elem)))
+            (= elem "(")   (evl (rest infix-expression) output (conj op-stack elem))
 
-            (number? elem)
-            (evl (rest pe) (conj nums elem) ops)
+            ;; while there is an operator at the top of the operator stack 
+            ;; which is not a left parenthesis, 
+            ;; and with greater or (equal precedence if is left-associative))
+            (#{"*" "+"} elem) (let [[output op-stack]
+                                    (loop [output output
+                                           op-stack op-stack]
+                                      (if (empty? op-stack)
+                                        [output op-stack]
+                                        (let [top (peek op-stack)]
+                                          (if (= top "(")
+                                            [output op-stack]
+                                            (if (>= (precedence top elem) 0)
+                                              (recur (conj output top) (pop op-stack))
+                                              [output op-stack])))))]
+                                (evl (rest infix-expression) output (conj op-stack elem)))
 
-            :else ;; collection
-            (let [elem (evl elem [] [])]
-              (evl (rest pe) (conj nums elem) ops))))))]
-    (evl expression [] [])))
+            (= elem ")") (let [[output op-stack]
+                               (loop [output output
+                                      op-stack op-stack]
+                                 (assert (seq op-stack))
+                                 (let [op (peek op-stack)]
+                                   (if (= op "(")
+                                     [output (pop op-stack)]
+                                     (recur (conj output op) (pop op-stack)))))]
+                           (evl (rest infix-expression) output op-stack))
 
+            :else :error))))]
+    (evl infix-expression [] [])))
+
+;; part 2
 (defn compute1 [expression]
   (-> expression
-      (pars->vec [])
-      ((fn [e] (evaluate-vec-expression-2
-                (fn [a b] 0) ;; use same precedenct for + and * 
-                e)))))
+      ((fn [e] (shunting-alg
+                (fn [_ _] 0) ;; use same precedenct for + and * 
+                e)))
+      post-fix-calc))
 
 (->> input-expressions
      (map compute1)
@@ -100,9 +91,9 @@
         :else -1))
 
 (defn compute2 [expression]
-  (-> expression
-      (pars->vec [])
-      ((fn [e] (evaluate-vec-expression-2 precedence-plus e)))))
+  (->> expression
+       ((partial shunting-alg precedence-plus))
+       post-fix-calc))
 
 (->> input-expressions
      (map compute2)
