@@ -155,7 +155,9 @@
    The grid is a 2D array of strings.
    Points is a sequence of [row col] pairs.
    rows and cols are the dimensions of the grid."
+
   [rows cols points]
+  (println rows cols)
   (let [grid (to-array-2d (vec (repeat rows (vec (repeat cols ".")))))]
     (doseq [[r c] points]
       (aset grid r c "#"))
