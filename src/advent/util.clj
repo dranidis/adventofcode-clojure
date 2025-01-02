@@ -147,7 +147,34 @@
         (do (print left-digits " ")
             (swap! n inc)))
       (doseq [cell row]
-        (print cell))
+        (print cell ""))
+      (println))))
+
+(defn draw-hex
+  "Draws a hex grid to the console.
+   The grid is a 2D array of strings."
+  [grid]
+
+  (let [n (atom 0)
+        rows (count grid)
+        cols (count (first grid))]
+    ;; print a line with the numbers 0123456...
+    (print "    ")
+    (doseq [c (range cols)]
+      (let [q (quot c 10)]
+        (print (if (zero? q) " " q))))
+    (println)
+    (print "    " (apply str (repeat rows " ")))
+    (doseq [c (range cols)]
+      (print (str (mod c 10) " ")))
+    (println)
+    (doseq [row grid]
+      (let [q (quot @n 10)
+            left-digits (str (if (zero? q) " " q) (mod @n 10))]
+        (do (print left-digits " " (apply str (repeat (- rows @n) " ")))
+            (swap! n inc)))
+      (doseq [cell row]
+        (print cell ""))
       (println))))
 
 (defn draw-grid-from-points
@@ -221,6 +248,8 @@
   (and (vector? coll)
        (some #(= elm %) coll)))
 
+(defn in-list? [lst elem]
+  (some #(= elem %) lst))
 ;; 
 ;; BFS find all paths from start to end
 ;; 
