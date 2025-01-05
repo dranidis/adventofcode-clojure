@@ -74,7 +74,7 @@
 (defn coords-of-symbol
   [grid symbol]
   (let [rows (count grid)
-        cols (count (first grid))]
+        cols (apply max (map count grid))]
     (vec (for [r (range rows)
                c (range cols)
                :when (= (get-in grid [r c]) symbol)]
@@ -146,7 +146,61 @@
         (do (print left-digits " ")
             (swap! n inc)))
       (doseq [cell row]
+        (print cell ""))
+      (println))))
+
+(defn draw-grid-condenced
+  "Draws a grid to the console.
+   The grid is a 2D array of strings."
+  [grid]
+
+  (let [n (atom 0)
+        rows (count grid)
+        cols (count (first grid))]
+    ;; print a line with the numbers 0123456...
+    (print "    ")
+    (doseq [c (range cols)]
+      (let [q (quot c 10)]
+        (print (if (zero? q) " " q))))
+    (println)
+    (print "    ")
+    (doseq [c (range cols)]
+      (print (mod c 10)))
+    (println)
+    (doseq [row grid]
+      (let [q (quot @n 10)
+            left-digits (str (if (zero? q) " " q) (mod @n 10))]
+        (do (print left-digits " ")
+            (swap! n inc)))
+      (doseq [cell row]
         (print cell))
+      (println))))
+
+(defn draw-hex
+  "Draws a hex grid to the console.
+   The grid is a 2D array of strings."
+  [grid]
+
+  (let [n (atom 0)
+        rows (count grid)
+        cols (count (first grid))]
+    ;; print a line with the numbers 0123456...
+    (print "    ")
+    (doseq [c (range cols)]
+      (let [q (quot c 10)]
+        (print (if (zero? q) " " q))))
+    (println)
+    (print "    " (apply str (repeat rows " ")))
+    (doseq [c (range cols)]
+      (print (str (mod c 10) " ")))
+    (println)
+    (doseq [row grid]
+      (let [q (quot @n 10)
+            left-digits (str (if (zero? q) " " q) (mod @n 10))]
+        (do (print left-digits " " (apply str (repeat (- rows @n) " ")))
+            (swap! n inc)))
+      (doseq [cell row]
+        (print cell ""))
       (println))))
 
 (defn draw-grid-from-points
@@ -198,6 +252,13 @@
       (set-grid [[5 5] [4 6] [4 7] [4 9]] \#)
 
       (draw-grid))
+
+  (-> (grid-2d 25 25 \.)
+      (set-grid [[1 1] [1 2] [2 0] [9 9]] \O)
+      (set-grid [[5 5] [4 6] [4 7] [4 9]] \#)
+
+      (draw-grid-condenced))
+
   ;
   )
 
