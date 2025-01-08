@@ -56,6 +56,74 @@
               (recur Q D))))
         D))))
 
+(defn dijkstra-shortest-distance-to-end-pred
+  "Return the shortest distances from start to all other nodes.
+   
+   - start: node
+   - end-pred: pred for the target node
+   - neighbors: node -> [[distance neighbor]]
+   - returns: distance to end
+
+   The neighbors is a function mapping a node to its 
+   neighbors, which are a list of [distance neighbor] pairs.
+   The result is a map from destination node to distance from the start."
+  [start end-pred neighbors]
+  (let [Q (add-with-priority! (make-priority-queue!
+                               (fn [[d _] [d2 _]] (< d d2)))
+                              [0 start])
+        D {}]
+    (loop [Q Q
+           D D]
+      (if-not (empty? Q)
+        (let [[dist node] (extract-min! Q)]
+      ;;     (println "Current node" node "distance" dist "queue" Q)
+      ;;     (println "Distances" D)
+          (if (end-pred node)
+            dist
+            (if (get D node)
+              (recur Q D)
+              (let [D (assoc D node dist)
+                    Q (apply add-with-priority! Q
+                             (map (fn [[d n]]
+                                  ;; (println "Adding" n "with distance" (+ dist d))
+                                    [(+ dist d) n])
+                                  (neighbors node)))]
+                (recur Q D)))))
+        D))))
+
+(defn A-star-shortest-distance-to-end-pred
+  "Return the shortest distance from start to end note.
+   
+   - start: node
+   - end-pred: pred for the target node
+   - neighbors: node -> [[distance neighbor]]
+   - heuristics: function for A* (fn [x] 0) defaults to dijkstra
+   - returns: distance to end
+
+   The neighbors is a function mapping a node to its 
+   neighbors, which are a list of [distance neighbor] pairs.
+   The result is a map from destination node to distance from the start."
+  [start end-pred neighbors heuristics]
+  (let [Q (add-with-priority! (make-priority-queue!
+                               (fn [[d _] [d2 _]] (< d d2)))
+                              [(heuristics start) 0 start])
+        D {}]
+    (loop [Q Q
+           D D]
+      (if-not (empty? Q)
+        (let [[_ dist node] (extract-min! Q)]
+          (if (end-pred node)
+            dist
+            (if (get D node)
+              (recur Q D)
+              (let [D (assoc D node dist)
+                    Q (apply add-with-priority! Q
+                             (map (fn [[d n]]
+                                    [(+ dist d (heuristics n)) (+ dist d) n])
+                                  (neighbors node)))]
+                (recur Q D)))))
+        D))))
+
 (defn dijkstra-shortest-distances-pred
   "Returns a map from destination node to [distance previous-node].
    
@@ -107,6 +175,8 @@
   (neighbors "A")
   (dijkstra-shortest-distances "A" neighbors)
   ;; {"A" 0, "B" 1, "C" 3, "E" 3, "F" 4, "D" 5}
+
+  (dijkstra-shortest-distance-to-end-pred "A" (fn [n] (= n "D")) neighbors)
 
   (defn neighbors-m
     "Return the neighbors of a node.

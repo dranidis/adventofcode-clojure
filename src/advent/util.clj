@@ -372,6 +372,11 @@
 (defn add-to-counter [counter item]
   (update counter item (fnil inc 0)))
 
+(defn rm-from-counter [counter item]
+  (if (= 1 (get counter item))
+    (dissoc counter item)
+    (update counter item (fnil dec 0))))
+
 (defn add-to-counter-times [counter item n]
   (update counter item (fnil #(+ % n) 0)))
 
@@ -380,6 +385,9 @@
 
 (defn add-items-to-counter-times [counter items n]
   (reduce #(add-to-counter-times %1 %2 n) counter items))
+
+(defn count-counter [counter]
+  (->> counter (map second) (apply +)))
 
 (comment
   (-> (counter) (add-to-counter 1) (add-to-counter-times 1 3) (add-to-counter 2))
@@ -393,6 +401,14 @@
 
   (-> (counter) (add-to-counter "a") (get "a"))
   ;;=> 1
+
+  (-> (counter) (add-to-counter ">") (add-to-counter ">")
+      (rm-from-counter ">"))
+  ;;=> {">" 1}
+
+  (-> (counter) (add-to-counter ">") (add-to-counter ">")
+      (rm-from-counter ">") (rm-from-counter ">"))
+  ;;=> {}
 
   (-> (counter)
       (add-to-counter "a")
@@ -452,13 +468,27 @@
   ;
   )
 
-(defn gcd [a b]
+(defn gcd
+  "Greatest common divisor"
+  [a b]
   (if (zero? b)
     a
     (recur b (mod a b))))
 
-(defn lcm [a b]
+(comment
+  (gcd 25 120)
+  ;
+  )
+
+(defn lcm
+  "Least common multiple"
+  [a b]
   (/ (* a b) (gcd a b)))
+
+(comment
+  (lcm 25 120)
+  ;
+  )
 
 (defn mod-inverse
   "Finds the modular multiplicative inverse of a under modulo m."
@@ -503,3 +533,9 @@
   (chinese-remainder-theorem example)
 ;;=> 78
   )
+
+(defn manhattan-distance [[s1 s2] [b1 b2]]
+  (+ (abs (- s1 b1)) (abs (- s2 b2))))
+
+(defn manhattan-distance-3d [[s1 s2 s3] [b1 b2 b3]]
+  (+ (abs (- s1 b1)) (abs (- s2 b2)) (abs (- s3 b3))))
