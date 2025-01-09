@@ -95,7 +95,27 @@
 (defn tranform-rel-to-1 [[trans-point-rel-to-1 rotation-matrix] pos-rel-2]
   (mapv + trans-point-rel-to-1 (multiply-matrix-vector rotation-matrix pos-rel-2)))
 
-(defn pairs-2d [s1 s2]
+(defn beacons-detected-by-both-after-trans [info-part trans1 trans2]
+  (let [s1 (:scanner1 info-part)
+        bs1 (if (some? trans1)
+              (mapv (partial tranform-rel-to-1 trans1) (beacons s1))
+              (beacons s1))
+        s2 (:scanner2 info-part)
+        bs2 (if (some? trans2)
+              (mapv (partial tranform-rel-to-1 trans2) (beacons s2))
+              (beacons s2))
+        beacon-pairs (vec (for [s1b1 bs1
+                                s1b2 bs1
+                                s2b1 bs2
+                                s2b2 bs2
+                                :let [d1 (euclidian-3d s1b1 s1b2)
+                                      d2 (euclidian-3d s2b1 s2b2)]
+                                :when (= d1 d2)
+                                :when ((:beacon-dists info-part) d1)]
+                            [s1b1 s2b1]))]
+    [(set (mapv #(nth % 0) beacon-pairs)) (set (mapv #(nth % 1) beacon-pairs))]))
+
+(defn find-pairs [[s1 s2]]
   (for [p11 s1]
     (first (for [p12 s1
                  :when (not= p11 p12)]
@@ -120,63 +140,20 @@
                                      (= d1-23 d2-23))]
                       [p11 p21]))))))
 
-(defn beacons-detected-by-both-0-and-1-relative-to-0 [info-part trans1 trans2]
-  (let [s1 (:scanner1 info-part)
-        bs1 (if (some? trans1)
-              (mapv (partial tranform-rel-to-1 trans1) (beacons s1))
-              (beacons s1))
-        s2 (:scanner2 info-part)
-        bs2 (if (some? trans2)
-              (mapv (partial tranform-rel-to-1 trans2) (beacons s2))
-              (beacons s2))]
-    (set (for [s1b1 bs1
-               s1b2 bs1
-               s2b1 bs2
-               s2b2 bs2
-               :let [d1 (euclidian-3d s1b1 s1b2)
-                     d2 (euclidian-3d s2b1 s2b2)]
-               :when (= d1 d2)
-               :when ((:beacon-dists info-part) d1)]
-           s1b1))))
-
-(defn beacons-detected-by-both-0-and-1-relative-to-1 [info-part trans1 trans2]
-  (let [s1 (:scanner1 info-part)
-        bs1 (if (some? trans1)
-              (mapv (partial tranform-rel-to-1 trans1) (beacons s1))
-              (beacons s1))
-        s2 (:scanner2 info-part)
-        bs2 (if (some? trans2)
-              (mapv (partial tranform-rel-to-1 trans2) (beacons s2))
-              (beacons s2))]
-    (set (for [s1b1 bs1
-               s1b2 bs1
-               s2b1 bs2
-               s2b2 bs2
-               :let [d1 (euclidian-3d s1b1 s1b2)
-                     d2 (euclidian-3d s2b1 s2b2)]
-               :when (= d1 d2)
-               :when ((:beacon-dists info-part) d1)]
-           s2b1))))
-
 (def transformations
   (loop [info info
-         pending []
          Dtr {0 nil}]
-    ;; (println Dtr)
     (if (empty? info)
-      (if (empty? pending)
-        Dtr
-        (recur pending [] Dtr))
+      Dtr
       (let [fi (first info)
             mapped-fi? (contains? Dtr (:scanner1 fi))]
         (if (or mapped-fi? (contains? Dtr (:scanner2 fi)))
           (let [[trans1 trans2] (if mapped-fi?
                                   [(Dtr (:scanner1 fi)) nil]
                                   [nil (Dtr (:scanner2 fi))])
-                p-2d (pairs-2d (beacons-detected-by-both-0-and-1-relative-to-0 fi trans1 trans2)
-                               (beacons-detected-by-both-0-and-1-relative-to-1 fi trans1 trans2))
-                v1 (mapv first p-2d)
-                v2 (mapv second p-2d)
+                pairs (find-pairs (beacons-detected-by-both-after-trans fi trans1 trans2))
+                v1 (mapv first pairs)
+                v2 (mapv second pairs)
                 tr01 (if mapped-fi?
                        (tr-m rotations v1 v2)
                        (tr-m rotations v2 v1))
@@ -184,9 +161,8 @@
                                  (:scanner2 fi)
                                  (:scanner1 fi))
                            tr01)]
-            (recur (rest info) pending Dtr))
-          (recur (rest info) (conj pending fi) Dtr))))))
-
+            (recur (vec (rest info)) Dtr))
+          (recur (conj (vec (rest info)) fi) Dtr))))))
 
 (def all-beacons (->> transformations
                       (reduce-kv (fn [m k v]
@@ -200,7 +176,7 @@
 (println "ANS 1" (count all-beacons))
 
 
-(def all-scanners (conj (remove nil? (map first (vals transformations))) [0 0 0]))
+(def all-scanners (conj (remove nil? (mapv first (vals transformations))) [0 0 0]))
 
 (println "ANS 2" (->> (for [s1 all-scanners
                             s2 all-scanners]

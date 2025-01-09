@@ -1,14 +1,6 @@
 (ns advent.2021.d24.core
   (:require
-   [clojure.string :as str]
-   [clojure.test :refer [is]]
-   [criterium.core :refer [quick-bench]]))
-
-(def example? false)
-
-(def example "")
-
-(def input (if example? example (slurp "src/advent/2021/d24/input.txt")))
+   [clojure.string :as str]))
 
 (defn input-cmds
   [input]
@@ -28,15 +20,7 @@
               (get s (keyword part2))))]
     [a b]))
 
-(def cmds (input-cmds input))
-
-(defn- process [cmds]
-  ;; matching the pattern div z 1 where z can be anything
-  (remove (fn [cmd] (and (str/starts-with? cmd "div")
-                         (= "1" (nth (str/split cmd #" ") 2))))
-          cmds))
-
-(def cmds (process cmds))
+(def cmds (input-cmds (slurp "src/advent/2021/d24/input.txt")))
 
 (defn MONAD
   [digits]
@@ -95,184 +79,114 @@
           (assert (= x 1)))
         (recur (rest cmds) ns (inc cnt) (:z ns) w)))))
 
+(comment
+  (def inputs (->> (for [i (range (parse-long (apply str (repeat 14 "9")))
+                                  (dec (parse-long (apply str (repeat 14 "1"))))
+                                  -1)]
+                     (mapv parse-long (str/split (str i) #"")))
+                   (remove (fn [s]
+                             (some zero? s)))))
 
-(def inputs (->> (for [i (range (parse-long (apply str (repeat 14 "9")))
-                                (dec (parse-long (apply str (repeat 14 "1"))))
-                                -1)]
-                   (mapv parse-long (str/split (str i) #"")))
-                 (remove (fn [s]
-                           (some zero? s)))))
+;; Takes for ever
+  (println (loop [inputs inputs
+                  cnt 0]
+             (when (zero? (mod cnt 100000)) (println (first inputs)))
+             (if (empty? inputs)
+               nil
+               (let [digits (first inputs)
+                     valid? (MONAD digits)]
+                 (if valid?
+                   digits
+                   (recur (rest inputs) (inc cnt))))))))
 
-
-;; 99999795919428
-
-(def inputs (->> (for [i (range 55555371514112
-                                (parse-long (apply str (repeat 14 "9"))))]
-                   (mapv parse-long (str/split (str i) #"")))
-                 (remove (fn [s]
-                           (some zero? s)))))
-
-
-(set! *unchecked-math* true)
-
-;; (def calc
-;;   (memoize (fn [w z xx yy zz]
-;;              (let [x (mod z 26)
-;;                    z (quot z zz)
-;;                    x (+ x xx)
-;;                    x (if (= x w) 0 1)
-;;                    y (inc (* 25 x))
-;;                    z (* z y)
-;;                    y (* x (+ w yy))
-;;                    z (+ z y)]
-;;                z))))
-
-;; (def calc-unchecked
-;;   (fn [w z xx yy zz]
-;;     (let [x (unchecked-remainder-int z 26)
-;;           z (unchecked-divide-int z zz)
-;;           x (unchecked-add-int x xx)
-;;           x (if (= x w) 0 1)
-;;           y (unchecked-inc-int (unchecked-multiply-int 25 x))
-;;           z (unchecked-multiply-int z y)
-;;           y (unchecked-multiply-int x (unchecked-add-int w yy))
-;;           z (unchecked-add-int z y)]
-;;       z)))
-
-(defn MONAD-2
-  [digits]
-  (loop [digits digits
-  ;;   x=1    1  1  1  1      1  1  1  1      1   1   1  1
-  ;;   x=0                0  -5        4   0      5 -11  6
-        ;;  R    1  2  3  4  5   6  7  8  9  10 11  12  13 14
-         xs [10 11 14 13 -6 -14 14 13 -8 -15 10 -11 -13 -4]
+;; After analyzing MY input file
+;; this is what is being executed in the 14 rounds
+;; Other input files use different constants but PROBABLY same logic
+(defn monad-analyzed [ws]
+  (loop [ws  ws
+         xs  [10 11 14 13  -6  -14      14 13 -8 -15 10 -11 -13 -4]
          ys  [1  9 12  6  9  15  7 12 15   3  6   2  10 12]
          zs  [1  1  1  1 26  26  1  1 26  26  1  26  26 26]
-         prevz 0
-         cnt 1
-         prev-dig nil
-         prevys nil]
-    (if (empty? digits)
-      (zero? prevz)
-      (let [w (nth digits 0)
+         z 0
+         X 0
+         cnt 0]
+    (if (empty? ws)
+      X
+      (let [w (nth ws 0)
             xx (nth xs 0)
             yy (nth ys 0)
             zz (nth zs 0)
 
-            x (unchecked-remainder-int prevz 26)
-            z (unchecked-divide-int prevz zz)
-            x (unchecked-add-int x xx)
+            x (mod z 26)
+            z (quot z zz) ;; gets smaller in some rounds
+            x (+ x xx)
             x (if (= x w) 0 1)
-            y (unchecked-inc-int (unchecked-multiply-int 25 x))
-            z (unchecked-multiply-int z y)
-            y (unchecked-multiply-int x (unchecked-add-int w yy))
-            z (unchecked-add-int z y)]
-        ;; (when (some? prevys)
-        ;;   (is (= (= x 0) (and (= zz 26) (= (- w prev-dig) (+ xx prevys))))
-        ;;       (str "cnt: " cnt " x: " x " CD:" w "PD" prev-dig " xx:" xx " pys"  prevys)) ; INV
-        ;;   (is (= (= x 1) (not (and (= zz 26) (= (- w prev-dig) (+ xx prevys)))))
-        ;;       (str "cnt: " cnt " x: " x " CD:" w "PD" prev-dig " xx:" xx " pys" prevys)))
+            y (inc (* 25 x))
+            z (* z y)
+            y (* x (+ w yy))
+            z (+ z y)]
 
-        ;; (is (= y (+ w yy)) (str "cnt: " cnt " y: " y))
-        ;; (is (= z (+ (* prevz 26) w yy)) (str "cnt: " cnt " z: " z))
+        (recur (rest ws)
+               (rest xs)
+               (rest ys)
+               (rest zs)
+               z
+               x
+               (inc cnt))))))
 
-        ;; (when (= cnt 1) ;; at end of dig 1
-        ;;   (assert (= z (inc w)))
-        ;;   (assert (= y (inc w)))
-        ;;   (assert (= x 1)))
-        ;; (when (= cnt 2) ;; at end of dig 2
-        ;;   (assert (and (= z (+ (* prevz 26) w 9))
-        ;;                (= y (+ w 9))
-        ;;                (= x 1))))
-        (recur (rest digits) (rest xs) (rest ys) (rest zs) z (inc cnt)
-               w yy)))))
-
-
-(println (loop [inputs inputs
-                cnt 0]
-           (when (zero? (mod cnt 100000)) (println (first inputs)))
-           (if (empty? inputs)
-             nil
-             (let [digits (first inputs)
-                   valid? (MONAD-2 digits)]
-               (if valid?
-                 digits
-                 (recur (rest inputs) (inc cnt)))))))
-
-;; (MONAD [9  9  9  9  9   7  9  5  9   1  9   4   2  8])
-;; (MONAD-2 [3 3 3 3 3 2 2 2 2 2 2 2 2 2])
-
-;; (MONAD-2 [8 8 8 8 8 3 2 2 2 2 2 2 2 2]) ; 6th is 5 less than 5th => x = 0
-
-
-;; in4 is ignored so put 9
-
-;; (pop [1 2 3])
-;; (quick-bench (rest [10 11 14 13 -6 -14 14 13 -8 -15 10 -11 -13 -4]))
-;; (quick-bench (pop [10 11 14 13 -6 -14 14 13 -8 -15 10 -11 -13 -4]))
-;; (quick-bench (first [10 11 14 13 -6 -14 14 13 -8 -15 10 -11 -13 -4]))
-;; (quick-bench (nth [10 11 14 13 -6 -14 14 13 -8 -15 10 -11 -13 -4] 0))
-
-;; ALU will run the MONAD: puzzle input
-;; What is the largest model number accepted by MONAD?
-
+;; To optimize the loops:
 ;; 4th = 5th
 ;; 6th = 3rd-2
 ;; 9th = 8th+4
-;; 10th = 8th - 4?
 ;; 12th = 11-5
-;; 13th = 11th-7 (-4?)
+(println "ANS 1"
+         (->> (first
+               (for [x1 (range 9 0 -1)
+                     x2 (range 9 0 -1)
+                     x3 (range 9 4 -1)
+                     x45 [9]
+                     x7 (range 9 0 -1)
+                     x8 (range 5 0 -1)
+                     :let [x-r9 (monad-analyzed [x1 x2 x3 x45 x45 (- x3 2) x7 x8 (+ x8 4)])]
+                     :when (zero? x-r9)
+                     x10 (range 9 0 -1)
+                     :let [x-r10 (monad-analyzed [x1 x2 x3 x45 x45 (- x3 2) x7 x8 (+ x8 4) x10])]
+                     :when (zero? x-r10)
+                     x11 (range 9 5 -1)
+                     :let [x-r12 (monad-analyzed [x1 x2 x3 x45 x45 (- x3 2) x7 x8 (+ x8 4) x10 x11 (- x11 5)])]
+                     :when (zero? x-r12)
+                     x13 (range 9 4 -1)
+                     :let [x-r13 (monad-analyzed [x1 x2 x3 x45 x45 (- x3 2) x7 x8 (+ x8 4) x10 x11 (- x11 5) x13])]
+                     :when (zero? x-r13)
+                     x14 (range 9 4 -1)
+                     :let [x-r14 (monad-analyzed [x1 x2 x3 x45 x45 (- x3 2) x7 x8 (+ x8 4) x10 x11 (- x11 5) x13 x14])]
+                     :when (zero? x-r14)]
+                 [x1 x2 x3 x45 x45 (- x3 2) x7 x8 (+ x8 4) x10 x11 (- x11 5) x13 x14]))
+              (map str)
+              (apply str)))
 
-
-;;          1  2  3  4  5   6  7  8  9  10 11  12  13 14
-;;          9  9  9  9  9   7  9  5  9  1  9   4   5  6
-(loop [ws  [5  5  3  1  1   1  9  1  5 1 6 1 1 2]
-       xs [10 11 14 13 -6 -14 14 13 -8 -15 10 -11 -13 -4]
-       ys  [1  9 12  6  9  15  7 12 15   3  6   2  10 12]
-       zs  [1  1  1  1 26  26  1  1 26  26  1  26  26 26]
-       z 0
-       cnt 0]
-  (println cnt (first zs) z)
-  (if (empty? ws)
-    nil
-    (let [w (nth ws 0)
-          xx (nth xs 0)
-          yy (nth ys 0)
-          zz (nth zs 0)
-
-          x (unchecked-remainder-int z 26)
-          z (unchecked-divide-int z zz)
-          _ (when (> zz 1) (println "TEMP Z" z))
-          x (unchecked-add-int x xx)
-          x (if (= x w) 0 1)
-          y (unchecked-inc-int (unchecked-multiply-int 25 x))
-          z (unchecked-multiply-int z y)
-          ;; _ (println z)
-          y (unchecked-multiply-int x (unchecked-add-int w yy))
-          ;; _ (println y)
-          z (unchecked-add-int z y)]
-      (recur (rest ws)
-             (rest xs)
-             (rest ys)
-             (rest zs)
-             z
-             (inc cnt)))))
-
-(map dec [6  6  6  6  6   4  8  1  5  0  5   0   2  3])
-
-;; (apply str (map str [8  8  8  8  8   6  8  4  8   1  8   3   1  7])) ;; 251
-(apply str (map str [9  9  9  9  9   7  9  5  9   1  9   4   2  8])) ;; 251
-(apply str (map str [9 9 9 9 9 7 9 5 9 1 9 4 5 6])) ;; 251
-(apply str (map str [5  5  3  1  1   1  9  1  5 1 6 1 1 2])) ;; 251
-
-;; 77777591516134 too high
-;; 88888684818317 too low ; too high 2
-;; 99999795919428 too low
-;; 66666481505023 toohigh
-;; 55311191516112 not right
-
-7  7  7  7  7   5  7  4  8  1  7   2   1  7
-
-7 7 7 7 7 5 9 1 5 1 6 1 3 4
-
-5 5 5 5 5 3 9 1 5 1 6 1 1 2
+(println "ANS 2"
+         (->> (first
+               (for [x1 (range 1 10)
+                     x2 (range 1 10)
+                     x3 (range 3 10)
+                     x45 [1]
+                     x7 (range 1 10)
+                     x8 (range 1 6)
+                     :let [x-r9 (monad-analyzed [x1 x2 x3 x45 x45 (- x3 2) x7 x8 (+ x8 4)])]
+                     :when (zero? x-r9)
+                     x10 (range 1 10)
+                     :let [x-r10 (monad-analyzed [x1 x2 x3 x45 x45 (- x3 2) x7 x8 (+ x8 4) x10])]
+                     :when (zero? x-r10)
+                     x11 (range 6 10)
+                     :let [x-r12 (monad-analyzed [x1 x2 x3 x45 x45 (- x3 2) x7 x8 (+ x8 4) x10 x11 (- x11 5)])]
+                     :when (zero? x-r12)
+                     x13 (range 1 10)
+                     :let [x-r13 (monad-analyzed [x1 x2 x3 x45 x45 (- x3 2) x7 x8 (+ x8 4) x10 x11 (- x11 5) x13])]
+                     :when (zero? x-r13)
+                     x14 (range 1 10)
+                     :let [x-r14 (monad-analyzed [x1 x2 x3 x45 x45 (- x3 2) x7 x8 (+ x8 4) x10 x11 (- x11 5) x13 x14])]
+                     :when (zero? x-r14)]
+                 [x1 x2 x3 x45 x45 (- x3 2) x7 x8 (+ x8 4) x10 x11 (- x11 5) x13 x14]))
+              (map str)
+              (apply str)))
