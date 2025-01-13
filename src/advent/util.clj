@@ -81,6 +81,15 @@
                :when (= (get-in grid [r c]) symbol)]
            [r c]))))
 
+(defn xy-of-symbol
+  [grid symbol]
+  (let [rows (count grid)
+        cols (apply max (map count grid))]
+    (vec (for [y (range rows)
+               x (range cols)
+               :when (= (get-in grid [y x]) symbol)]
+           [x y]))))
+
 (defn coords-of-pred
   [grid pred]
   (let [rows (count grid)

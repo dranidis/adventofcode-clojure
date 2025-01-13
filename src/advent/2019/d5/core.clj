@@ -69,11 +69,11 @@
                   instructions (assoc instructions at res)]
               (recur instructions inputs outputs (+ cnt 4)))
 
-            :else :error))))))
+            :else (throw (ex-info (str "No ins for " e) {}))))))))
 
 
 (defn- -main [& _]
   (println "ANS 1:" (run-int-code-computer instructions 0 [1]))
   (println "ANS 2:" (run-int-code-computer instructions 0 [5])))
 
-;; (-main)
+(-main)

@@ -1,6 +1,6 @@
 (ns advent.2019.d7.core
   (:require
-   [advent.2019.d5.core :refer [run-int-code-computer]]
+   [advent.2019.d9.core :refer [run-int-code-computer]]
    [advent.util :refer [str->nums]]
    [clojure.math.combinatorics :as combo]))
 
