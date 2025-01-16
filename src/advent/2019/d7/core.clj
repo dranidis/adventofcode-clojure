@@ -1,6 +1,6 @@
 (ns advent.2019.d7.core
   (:require
-   [advent.2019.d9.core :refer [run-int-code-computer]]
+   [advent.2019.d9.core :refer [run-int-code-computer visited]]
    [advent.util :refer [str->nums]]
    [clojure.math.combinatorics :as combo]))
 
@@ -70,3 +70,5 @@
                  (loop-amp instructions p1 p2 p3 p4 p5))
                (combo/permutations (range 5 10)))
               (apply max)))
+
+(println (->> @visited (into []) sort))

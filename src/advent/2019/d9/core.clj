@@ -10,6 +10,9 @@
 (def input (if example? example (slurp "src/advent/2019/d9/input.txt")))
 
 (def debugln str)
+(def debug str)
+
+(def visited (atom {}))
 
 (defn state [instructions inputs outputs cnt base]
   {:ins (if (vector? instructions)
@@ -21,6 +24,7 @@
    :base base})
 
 (defn address [par-mode base a]
+  (debugln "address TO" par-mode base a)
   (case par-mode
     0 a
     2 (+ base a)))
@@ -39,6 +43,7 @@
 
 (defn address-for-writing [s par-mode n]
   (let [a (get (:ins s) (+ (:cnt s) n))]
+
     (address par-mode (:base s) a)))
 
 (defn op2 [s par-modes par-fn]
@@ -59,7 +64,9 @@
         at (address-for-writing s (first par-modes) 1)]
     (assert (some? at) (str "INPUT address should not be nil: " at))
     (if (empty? inputs)
-      [instructions (last outputs) cnt]
+      ;; [instructions (last outputs) cnt]
+      (do (debugln "Empty inputs")
+          [instructions outputs cnt (:base s)])
       (do (debugln "INPUT " (first inputs) "AT" at)
           (-> s
               (assoc-in [:ins at] (first inputs))
@@ -67,7 +74,6 @@
               (update :cnt + 2))))))
 
 (defn- output-op [s par-modes]
-  ;; (println (:ins s))
   (let [pars (values-of-args s par-modes 1)
         out (first pars)]
     (debugln "OUTPUT" out)
@@ -84,20 +90,74 @@
 
 (defn- jump-op [s par-modes pred]
   (let [[n1 n2] (values-of-args s par-modes 2)]
+    (debugln "IF-pred " n1 (pred n1) "JUMP TO" n2)
     (-> s
         (update :cnt (if (pred n1) (fn [_] n2) (partial + 3))))))
 
-(defn run-int-code-computer [instructions-i cnt inputs]
-  (loop [current-state (state instructions-i inputs [] cnt 0)]
+(defn run-int-code-computer-all-till [instructions-i cnt inputs till]
+  (loop [current-state (state instructions-i inputs [] cnt 0)
+         til 0]
+    (if (= til till)
+      current-state
+      (let [ins (get (:ins current-state) (:cnt current-state))]
+        (if (= ins 99)
+          (do (debugln (:out current-state))
+              current-state)
+          (let [ins-str (mapv parse-long (str/split (str ins) #""))
+                [a b c d e] (vec (concat (repeat (- 5 (count ins-str)) 0) ins-str))
+                par-modes [c b a]
+                _ (debugln (str (mapv #(get (:ins current-state) %) (range (:cnt current-state) (+ 4 (:cnt current-state))))))
+                _ (debugln "ABCDE" [a b c d e])
+                _ (swap! visited update e (fnil inc 0))]
+            (cond
+              (#{1 2 7 8} e)
+              (recur (op2 current-state par-modes
+                          #(case e
+                             1 (apply + %)
+                             2 (apply * %)
+                             7 (if (apply < %) 1 0)
+                             8 (if (apply = %) 1 0)))
+                     (inc til))
+
+              (= e 3)
+              (let [i (input-op current-state par-modes)]
+                (if (vector? i)
+                  current-state
+                  (recur i (inc til))))
+
+              (= e 4)
+              (recur (output-op current-state par-modes) (inc til))
+
+              (= e 5)
+              (do (debug "JUMP if not zero ")
+                  (recur (jump-op current-state par-modes #(not (zero? %)))
+                         (inc til)))
+
+              (= e 6)
+              (recur (jump-op current-state par-modes #(zero? %))
+                     (inc til))
+
+              (= e 9)
+              (let [_ (debugln "OLD BASE" (:base current-state))
+                    ns (rel-op current-state par-modes)]
+                (debugln "NEW" (:base ns))
+                (recur ns (inc til)))
+
+
+              :else (throw (ex-info (str "No ins for " e) {})))))))))
+
+(defn run-int-code-computer-all [instructions-i cnt base inputs]
+  (loop [current-state (state instructions-i inputs [] cnt base)]
     (let [ins (get (:ins current-state) (:cnt current-state))]
       (if (= ins 99)
         (do (debugln (:out current-state))
-            (last (:out current-state)))
+            (:out current-state))
         (let [ins-str (mapv parse-long (str/split (str ins) #""))
               [a b c d e] (vec (concat (repeat (- 5 (count ins-str)) 0) ins-str))
               par-modes [c b a]
               _ (debugln (str (mapv #(get (:ins current-state) %) (range (:cnt current-state) (+ 4 (:cnt current-state))))))
-              _ (debugln "ABCDE" [a b c d e])]
+              _ (debugln "ABCDE" [a b c d e])
+              _ (swap! visited update e (fnil inc 0))]
           (cond
             (#{1 2 7 8} e)
             (recur (op2 current-state par-modes
@@ -117,7 +177,8 @@
             (recur (output-op current-state par-modes))
 
             (= e 5)
-            (recur (jump-op current-state par-modes #(not (zero? %))))
+            (do (debug "JUMP if not zero ")
+                (recur (jump-op current-state par-modes #(not (zero? %)))))
 
             (= e 6)
             (recur (jump-op current-state par-modes #(zero? %)))
@@ -131,10 +192,24 @@
 
             :else (throw (ex-info (str "No ins for " e) {}))))))))
 
-(println "ANS 1:" (run-int-code-computer
-                   (str->nums input)
-                   0 [1]))
 
-(println "ANS 2:" (run-int-code-computer
-                   (str->nums input)
-                   0 [2]))
+;; (run-int-code-computer-all (str->nums input) 0 [1])
+;; (run-int-code-computer-all (str->nums input) 0 [2])
+
+(defn run-int-code-computer [instructions-i cnt inputs]
+  (let [c (run-int-code-computer-all instructions-i cnt 0 inputs)
+        lst (first c)]
+    (if (number? lst) lst
+        (let [[instructions outputs cnt] c]
+          [instructions (last outputs) cnt]))))
+
+(defn- -main [& _]
+  (println "Day XX, Part 1:" (run-int-code-computer
+                              (str->nums input)
+                              0 [1]))
+
+  (println "Day XX, Part 2:" (run-int-code-computer
+                              (str->nums input)
+                              0 [2]))
+  (println (->> @visited (into []) sort)))
+
