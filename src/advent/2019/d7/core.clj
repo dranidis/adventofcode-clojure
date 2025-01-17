@@ -1,6 +1,6 @@
 (ns advent.2019.d7.core
   (:require
-   [advent.2019.d9.core :refer [run-int-code-computer visited]]
+   [advent.2019.d9.core :refer [run-int-code-computer-all]]
    [advent.util :refer [str->nums]]
    [clojure.math.combinatorics :as combo]))
 
@@ -13,17 +13,25 @@
 
 (def instructions (->> input str->nums))
 
-(println "ANS 1: "
-         (->> (mapv
-               (fn [[p1 p2 p3 p4 p5]]
-                 (let [out-s (run-int-code-computer instructions 0 [p1 0])
-                       out-s (run-int-code-computer instructions 0 [p2 out-s])
-                       out-s (run-int-code-computer instructions 0 [p3 out-s])
-                       out-s (run-int-code-computer instructions 0 [p4 out-s])
-                       out-s (run-int-code-computer instructions 0 [p5 out-s])]
-                   out-s))
-               (combo/permutations (range 5)))
-              (apply max)))
+
+(defn run-int-code-computer [instructions-i cnt inputs]
+  (let [c (run-int-code-computer-all instructions-i cnt 0 inputs)
+        lst (last c)]
+    (if (vector? c) lst
+        (let [[instructions outputs cnt] (mapv c [:ins :out :cnt])]
+          [instructions (last outputs) cnt]))))
+
+(def answer-1
+  (->> (mapv
+        (fn [[p1 p2 p3 p4 p5]]
+          (let [out-s (run-int-code-computer instructions 0 [p1 0])
+                out-s (run-int-code-computer instructions 0 [p2 out-s])
+                out-s (run-int-code-computer instructions 0 [p3 out-s])
+                out-s (run-int-code-computer instructions 0 [p4 out-s])
+                out-s (run-int-code-computer instructions 0 [p5 out-s])]
+            out-s))
+        (combo/permutations (range 5)))
+       (apply max)))
 
 (defn loop-amp [instructions p1 p2 p3 p4 p5]
   (let [[ins-1 _ cnt-1]
@@ -64,11 +72,13 @@
                    [cnt-1 cnt-2 cnt-3 cnt-4 cnt-5]
                    out-s)))))))
 
-(println "ANS 2: "
-         (->> (mapv
-               (fn [[p1 p2 p3 p4 p5]]
-                 (loop-amp instructions p1 p2 p3 p4 p5))
-               (combo/permutations (range 5 10)))
-              (apply max)))
+(def answer-2
+  (->> (mapv
+        (fn [[p1 p2 p3 p4 p5]]
+          (loop-amp instructions p1 p2 p3 p4 p5))
+        (combo/permutations (range 5 10)))
+       (apply max)))
 
-(println (->> @visited (into []) sort))
+(defn- -main [& _]
+  (println "ANS 1:" answer-1)
+  (println "ANS 2:" answer-2))

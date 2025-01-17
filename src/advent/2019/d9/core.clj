@@ -12,8 +12,6 @@
 (def debugln str)
 (def debug str)
 
-(def visited (atom {}))
-
 (defn state [instructions inputs outputs cnt base]
   {:ins (if (vector? instructions)
           (into {} (map-indexed vector instructions))
@@ -57,21 +55,14 @@
         (update :cnt + 4))))
 
 (defn input-op [s par-modes]
-  (let [instructions (:ins s)
-        outputs (:out s)
-        cnt (:cnt s)
-        inputs (:in s)
+  (let [inputs (:in s)
         at (address-for-writing s (first par-modes) 1)]
     (assert (some? at) (str "INPUT address should not be nil: " at))
-    (if (empty? inputs)
-      ;; [instructions (last outputs) cnt]
-      (do (debugln "Empty inputs")
-          [instructions outputs cnt (:base s)])
-      (do (debugln "INPUT " (first inputs) "AT" at)
-          (-> s
-              (assoc-in [:ins at] (first inputs))
-              (update :in rest)
-              (update :cnt + 2))))))
+    (debugln "INPUT " (first inputs) "AT" at)
+    (-> s
+        (assoc-in [:ins at] (first inputs))
+        (update :in rest)
+        (update :cnt + 2))))
 
 (defn- output-op [s par-modes]
   (let [pars (values-of-args s par-modes 1)
@@ -107,8 +98,7 @@
                 [a b c d e] (vec (concat (repeat (- 5 (count ins-str)) 0) ins-str))
                 par-modes [c b a]
                 _ (debugln (str (mapv #(get (:ins current-state) %) (range (:cnt current-state) (+ 4 (:cnt current-state))))))
-                _ (debugln "ABCDE" [a b c d e])
-                _ (swap! visited update e (fnil inc 0))]
+                _ (debugln "ABCDE" [a b c d e])]
             (cond
               (#{1 2 7 8} e)
               (recur (op2 current-state par-modes
@@ -146,70 +136,63 @@
 
               :else (throw (ex-info (str "No ins for " e) {})))))))))
 
-(defn run-int-code-computer-all [instructions-i cnt base inputs]
+(defn run-int-code-computer-all
+  "Retunrs the output array if the program terminates.
+   Returns the whole state when waiting for input."
+  [instructions-i cnt base inputs]
   (loop [current-state (state instructions-i inputs [] cnt base)]
-    (let [ins (get (:ins current-state) (:cnt current-state))]
-      (if (= ins 99)
+    (let [ins (get (:ins current-state) (:cnt current-state))
+          ins-str (mapv parse-long (str/split (str ins) #""))
+          [a b c d e] (vec (concat (repeat (- 5 (count ins-str)) 0) ins-str))
+          e (+ (* 10 d) e)
+          par-modes [c b a]
+          _ (debugln (str (mapv #(get (:ins current-state) %) (range (:cnt current-state) (+ 4 (:cnt current-state))))))
+          _ (debugln "ABCDE" [a b c d e])]
+      (cond
+        (= e 99)
         (do (debugln (:out current-state))
             (:out current-state))
-        (let [ins-str (mapv parse-long (str/split (str ins) #""))
-              [a b c d e] (vec (concat (repeat (- 5 (count ins-str)) 0) ins-str))
-              par-modes [c b a]
-              _ (debugln (str (mapv #(get (:ins current-state) %) (range (:cnt current-state) (+ 4 (:cnt current-state))))))
-              _ (debugln "ABCDE" [a b c d e])
-              _ (swap! visited update e (fnil inc 0))]
-          (cond
-            (#{1 2 7 8} e)
-            (recur (op2 current-state par-modes
-                        #(case e
-                           1 (apply + %)
-                           2 (apply * %)
-                           7 (if (apply < %) 1 0)
-                           8 (if (apply = %) 1 0))))
 
-            (= e 3)
-            (let [i (input-op current-state par-modes)]
-              (if (vector? i)
-                i
-                (recur i)))
+        (#{1 2 7 8} e)
+        (recur (op2 current-state par-modes
+                    #(case e
+                       1 (apply + %)
+                       2 (apply * %)
+                       7 (if (apply < %) 1 0)
+                       8 (if (apply = %) 1 0))))
 
-            (= e 4)
-            (recur (output-op current-state par-modes))
+        (= e 3)
+        (if (empty? (:in current-state))
+          current-state
+                  ;; (mapv (fn [k] (get current-state k)) [:ins :out :cnt :base])
 
-            (= e 5)
-            (do (debug "JUMP if not zero ")
-                (recur (jump-op current-state par-modes #(not (zero? %)))))
+          (let [i (input-op current-state par-modes)]
+            (recur i)))
 
-            (= e 6)
-            (recur (jump-op current-state par-modes #(zero? %)))
+        (= e 4)
+        (recur (output-op current-state par-modes))
 
-            (= e 9)
-            (let [_ (debugln "OLD BASE" (:base current-state))
-                  ns (rel-op current-state par-modes)]
-              (debugln "NEW" (:base ns))
-              (recur ns))
+        (= e 5)
+        (do (debug "JUMP if not zero ")
+            (recur (jump-op current-state par-modes #(not (zero? %)))))
+
+        (= e 6)
+        (recur (jump-op current-state par-modes #(zero? %)))
+
+        (= e 9)
+        (let [_ (debugln "OLD BASE" (:base current-state))
+              ns (rel-op current-state par-modes)]
+          (debugln "NEW" (:base ns))
+          (recur ns))
 
 
-            :else (throw (ex-info (str "No ins for " e) {}))))))))
+        :else (throw (ex-info (str "No ins for " e) {}))))))
 
-
-;; (run-int-code-computer-all (str->nums input) 0 [1])
-;; (run-int-code-computer-all (str->nums input) 0 [2])
-
-(defn run-int-code-computer [instructions-i cnt inputs]
-  (let [c (run-int-code-computer-all instructions-i cnt 0 inputs)
-        lst (first c)]
-    (if (number? lst) lst
-        (let [[instructions outputs cnt] c]
-          [instructions (last outputs) cnt]))))
+(defn run-int-code-computer-state [state]
+  (run-int-code-computer-all (:ins state) (:cnt state) (:base state) (:in state)))
 
 (defn- -main [& _]
-  (println "Day XX, Part 1:" (run-int-code-computer
-                              (str->nums input)
-                              0 [1]))
+  (let [instructions (str->nums input)]
+    (println "Day 9, Part 1:" (last (run-int-code-computer-all instructions 0 0 [1])))
 
-  (println "Day XX, Part 2:" (run-int-code-computer
-                              (str->nums input)
-                              0 [2]))
-  (println (->> @visited (into []) sort)))
-
+    (println "Day 9, Part 2:" (last (run-int-code-computer-all instructions 0 0 [2])))))

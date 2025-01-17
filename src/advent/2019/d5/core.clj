@@ -1,6 +1,6 @@
 (ns advent.2019.d5.core
   (:require
-   [advent.2019.d9.core :refer [run-int-code-computer-all visited]]
+   [advent.2019.d9.core :refer [run-int-code-computer-all]]
    [advent.util :refer [str->nums]]))
 
 (def instructions (-> (slurp "src/advent/2019/d5/input.txt")
@@ -74,6 +74,5 @@
 
 (defn- -main [& _]
   (println "ANS 1:" (last (run-int-code-computer-all instructions 0 0 [1])))
-  (println "ANS 2:" (last (run-int-code-computer-all instructions 0 0 [5])))
-  (println (->> @visited (into []) sort)))
+  (println "ANS 2:" (last (run-int-code-computer-all instructions 0 0 [5]))))
 
