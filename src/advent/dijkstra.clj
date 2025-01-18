@@ -57,7 +57,8 @@
         D))))
 
 (defn dijkstra-shortest-distance-to-end-pred
-  "Return the shortest distances from start to all other nodes.
+  "Return the shortest distance from start to the end node
+   as defined by the predicate.
    
    - start: node
    - end-pred: pred for the target node

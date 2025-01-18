@@ -1,7 +1,8 @@
 (ns advent.2019.d13.core
   (:require
    [advent.2019.d9.core :refer [run-int-code-computer-state state]]
-   [advent.util :refer [draw-grid-condenced grid-2d set-grid str->nums]]))
+   [advent.util :refer [draw-grid-condenced grid-2d set-grid str->nums]]
+   [clojure.term.colors :as colors]))
 
 (def instructions (str->nums (slurp "src/advent/2019/d13/input.txt")))
 
@@ -19,11 +20,11 @@
         score (get display [0 -1])]
     (println "SCORE: " score)
     (-> (grid-2d 23 43 \.)
-        (set-grid (fil-tiles 1) \#)
-        (set-grid (fil-tiles 2) \@)
+        (set-grid (fil-tiles 1) (colors/blue \█))
+        (set-grid (fil-tiles 2) (colors/green \▒))
         (set-grid (fil-tiles 0) " ")
-        (set-grid (fil-tiles 3) \=)
-        (set-grid (fil-tiles 4) \o)
+        (set-grid (fil-tiles 3) \■)
+        (set-grid (fil-tiles 4) (colors/red \■))
         (draw-grid-condenced))))
 
 (defn- piece [r n]

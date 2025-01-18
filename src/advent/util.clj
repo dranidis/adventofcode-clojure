@@ -548,3 +548,17 @@
 
 (defn manhattan-distance-3d [[s1 s2 s3] [b1 b2 b3]]
   (+ (abs (- s1 b1)) (abs (- s2 b2)) (abs (- s3 b3))))
+
+(defn bin-search
+  "Given a low estimate `from` where `pred` is true and
+   a high estimate `to` where pred is false, find the highest
+   value for which `pred` is true."
+  [from to pred]
+  (loop [from from
+         to to]
+    (if (= (inc from) to)
+      from
+      (let [mid (+ from (quot (- to from) 2))]
+        (if (pred mid)
+          (recur mid to)
+          (recur from mid))))))
